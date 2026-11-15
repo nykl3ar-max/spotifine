@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.10.0';
+  const VERSION = '3.12.3';
   const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
   const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
-  const FACT_ORDER = ['Birth name', 'Born', 'Birthplace', 'Origin', 'Country', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
+  const FACT_ORDER = ['Birth name', 'Born', 'Died', 'Birthplace', 'Origin', 'Country', 'Type', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -1360,8 +1360,8 @@
   }
 
   const MUSIC_OCCUPATIONS = new Set([
-    'Q177220', 'Q2252262', 'Q639669', 'Q48820564', 'Q753110', 'Q36834', 'Q183945',
-    'Q1622272', 'Q855091', 'Q486748', 'Q386854', 'Q584301', 'Q158852', 'Q12800682'
+    'Q177220', 'Q2252262', 'Q639669', 'Q753110', 'Q36834', 'Q183945',
+    'Q855091', 'Q486748', 'Q386854', 'Q584301', 'Q158852', 'Q12800682'
   ]);
 
   const MUSIC_GROUPS = new Set([
@@ -1393,6 +1393,128 @@
     return false;
   }
 
+  const POLITICS_DESCRIPTION = /\b(politician|member of parliament|parliament|senator|minister|governor|mayor|president|prime minister|chancellor|diplomat|lawyer|judge|activist|businessman|businesswoman|military officer|political party)\b/i;
+
+  function isPoliticalEntity(entity, description) {
+    if (POLITICS_DESCRIPTION.test(description || entityDescription(entity))) { return true; }
+    return entityValues(entity, 'P106').indexOf('Q82955') >= 0;
+  }
+
+  function formatMbDate(value) {
+    const match = String(value || '').match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?/);
+    if (!match) { return ''; }
+    return match[2] && match[3] ? match[1] + '-' + match[2] + '-' + match[3] : match[1];
+  }
+
+  function regionName(code) {
+    try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) || code; } catch (error) { return code; }
+  }
+
+  function musicBrainzFacts(mb) {
+    const facts = [];
+    if (!mb) { return facts; }
+    if (mb.type) { facts.push(['Type', mb.type]); }
+    const life = mb['life-span'] || {};
+    if (life.begin) { facts.push(['Born', formatMbDate(life.begin)]); }
+    if (life.end) { facts.push(['Died', formatMbDate(life.end)]); }
+    if (life.begin || life.end) {
+      facts.push(['Active', [life.begin && life.begin.slice(0, 4), life.end && life.end.slice(0, 4)].filter(Boolean).join('–')]);
+    }
+    const area = (mb['begin-area'] && mb['begin-area'].name) || (mb.area && mb.area.name) || '';
+    if (area) { facts.push(['Birthplace', area]); }
+    if (mb.country) { facts.push(['Country', regionName(mb.country)]); }
+    const genres = (mb.genres || []).map((genre) => genre && genre.name).filter(Boolean).slice(0, 3);
+    if (genres.length) { facts.push(['Genres', genres.join(', ')]); }
+    return facts;
+  }
+
+  function musicBrainzLinks(mb, artistUrl) {
+    const links = [];
+    if (!mb) { return links; }
+    const seen = new Set();
+    const add = (label, url) => {
+      const key = String(label || '').toLowerCase();
+      if (!label || !url || seen.has(key)) { return; }
+      seen.add(key);
+      links.push({ label, url });
+    };
+    if (artistUrl) { add('Spotify', artistUrl); }
+    add('MusicBrainz', 'https://musicbrainz.org/artist/' + mb.id);
+    for (const relation of (mb.relations || []).slice(0, 20)) {
+      const url = relation && relation.url && relation.url.resource;
+      if (!url) { continue; }
+      const type = String(relation.type || '').toLowerCase();
+      const host = url.replace(/^https?:\/\/(www\.)?/i, '').split('/')[0].toLowerCase();
+      if (type.indexOf('official homepage') >= 0) {
+        add('Official website', url);
+      } else if (type.indexOf('social network') >= 0) {
+        const label = host.indexOf('instagram') >= 0 ? 'Instagram'
+          : host.indexOf('facebook') >= 0 ? 'Facebook'
+            : host.indexOf('tiktok') >= 0 ? 'TikTok'
+              : host.indexOf('youtube') >= 0 ? 'YouTube'
+                : (host.indexOf('x.com') >= 0 || host.indexOf('twitter') >= 0) ? 'X / Twitter'
+                  : host.indexOf('threads') >= 0 ? 'Threads'
+                    : host.indexOf('vk.') >= 0 ? 'VK' : host;
+        add(label, url);
+      } else if (type.indexOf('streaming') >= 0 && !(host.indexOf('spotify') >= 0 && artistUrl)) {
+        const label = host.indexOf('spotify') >= 0 ? 'Spotify'
+          : host.indexOf('soundcloud') >= 0 ? 'SoundCloud'
+            : host.indexOf('bandcamp') >= 0 ? 'Bandcamp'
+              : host.indexOf('youtube') >= 0 ? 'YouTube'
+                : host.indexOf('yandex') >= 0 ? 'Yandex Music'
+                : host.indexOf('amazon') >= 0 ? 'Amazon Music'
+                : host.indexOf('apple') >= 0 ? 'Apple Music'
+                : host.indexOf('tidal') >= 0 ? 'Tidal'
+                  : host.indexOf('pandora') >= 0 ? 'Pandora'
+                    : host.indexOf('deezer') >= 0 ? 'Deezer'
+                      : host.replace(/\..*$/, '').replace(/^./, (letter) => letter.toUpperCase());
+        add(label, url);
+      }
+    }
+    return links;
+  }
+
+  async function findMusicBrainzArtist(name) {
+    const target = normalizeName(name);
+    if (!target) { return null; }
+    try {
+      const cleaned = String(name || '').replace(/\s*[([].*?[)\]]\s*/g, ' ').trim();
+      const search = await fetchJson('https://musicbrainz.org/ws/2/artist?query=' +
+        encodeURIComponent('artist:"' + cleaned + '"') + '&fmt=json&limit=10');
+      const exact = (search.artists || []).filter((item) => {
+        if (normalizeName(item.name) !== target) { return false; }
+        const disambiguation = String(item.disambiguation || '');
+        return !POLITICS_DESCRIPTION.test(disambiguation) || MUSIC_DESCRIPTION.test(disambiguation);
+      });
+      if (!exact.length) { return null; }
+      exact.sort((left, right) => (Number(right.score) || 0) - (Number(left.score) || 0));
+      const chosen = exact[0];
+      let details = null;
+      try {
+        details = await fetchJson('https://musicbrainz.org/ws/2/artist/' + chosen.id + '?inc=url-rels+genres&fmt=json');
+      } catch (error) { }
+      return details ? Object.assign({}, chosen, details, { score: chosen.score }) : chosen;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function wikidataForMbid(mbid) {
+    try {
+      const search = await fetchJson('https://www.wikidata.org/w/api.php?action=query&list=search&srsearch=' +
+        encodeURIComponent('haswbstatement:P434=' + mbid) + '&srnamespace=0&srlimit=3&format=json&origin=*');
+      const id = ((search.query && search.query.search) || []).map((item) => item.title).find((title) => /^Q\d+$/.test(title));
+      if (!id) { return null; }
+      const data = await fetchJson('https://www.wikidata.org/w/api.php?action=wbgetentities&ids=' + id +
+        '&props=claims|descriptions|labels|sitelinks&languages=en&sitefilter=enwiki&format=json&origin=*');
+      const entity = data.entities && data.entities[id];
+      if (!entity) { return null; }
+      return { qid: id, entity, title: entity.sitelinks && entity.sitelinks.enwiki ? entity.sitelinks.enwiki.title : '' };
+    } catch (error) {
+      return null;
+    }
+  }
+
   async function findMusicEntity(name) {
     const cleaned = String(name || '')
       .replace(/\s*[([].*?[)\]]\s*/g, ' ')
@@ -1414,8 +1536,10 @@
         if (!entity) { continue; }
         const label = entity.labels && entity.labels.en ? entity.labels.en.value : '';
         const normalized = normalizeName(label);
-        if (normalized !== target && normalized.indexOf(target) < 0) { continue; }
+        if (normalized !== target) { continue; }
         if (!isMusicEntity(entity)) { continue; }
+        const musicOccupation = entityValues(entity, 'P106').some((id) => MUSIC_OCCUPATIONS.has(id));
+        if (isPoliticalEntity(entity, entityDescription(entity)) && !musicOccupation) { continue; }
         const title = entity.sitelinks && entity.sitelinks.enwiki ? entity.sitelinks.enwiki.title : '';
         if (!title) { continue; }
         const description = entityDescription(entity);
@@ -1451,7 +1575,8 @@
           encodeURIComponent(query) + '&srlimit=8&format=json&origin=*');
         const hits = (result.query && result.query.search) || [];
         for (const hit of hits) {
-          if (normalizeName(hit.title).indexOf(target) < 0) { continue; }
+          const titleNormalized = normalizeName(hit.title);
+          if (titleNormalized !== target) { continue; }
           try {
             const summary = await fetchJson('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(hit.title));
             const description = summary && summary.description ? summary.description : '';
@@ -1480,30 +1605,44 @@
     if (memory) { state.artist = memory; renderArtist(); return; }
     if (refs.artist) { refs.artist.innerHTML = '<div class="sum-status">Loading artist information…</div>'; }
     try {
-      const wiki = await findWikipedia(name);
+      let mb = await findMusicBrainzArtist(name);
+      let wiki = null;
+      let linked = null;
+      if (mb) {
+        linked = await wikidataForMbid(mb.id);
+        const linkedEntity = linked && linked.entity;
+        const musicOccupation = linkedEntity && entityValues(linkedEntity, 'P106').some((id) => MUSIC_OCCUPATIONS.has(id));
+        if (linkedEntity && (!isMusicEntity(linkedEntity) || (isPoliticalEntity(linkedEntity, entityDescription(linkedEntity)) && !musicOccupation))) {
+          mb = null;
+          linked = null;
+        }
+        if (mb && !linked) {
+          try {
+            const page = await fetchJson('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(name));
+            const description = page && page.description ? page.description : '';
+            if (POLITICS_DESCRIPTION.test(description) && !MUSIC_DESCRIPTION.test(description)) { mb = null; }
+          } catch (error) { }
+        }
+      }
+      if (mb) {
+        const title = linked && linked.title ? linked.title : '';
+        if (title) {
+          try {
+            const found = await fetchJson('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title));
+            if (found && found.type !== 'disambiguation' && found.extract) {
+              wiki = { title, summary: found, qid: linked.qid, entity: linked.entity };
+            }
+          } catch (error) { }
+        }
+      } else {
+        wiki = await findWikipedia(name);
+      }
       const summary = wiki ? wiki.summary : null;
       let wikidata = null;
       let labels = {};
       try {
-        let qid = wiki && wiki.qid ? wiki.qid : '';
-        let entity = wiki && wiki.entity ? wiki.entity : null;
-        if (!entity) {
-          const search = await fetchJson('https://www.wikidata.org/w/api.php?action=wbsearchentities&search=' +
-            encodeURIComponent(name) + '&language=en&type=item&limit=6&format=json&origin=*');
-          const searchIds = ((search.search || []).map((item) => item.id).filter(Boolean)).slice(0, 6);
-          if (searchIds.length) {
-            const entityData = await fetchJson('https://www.wikidata.org/w/api.php?action=wbgetentities&ids=' + searchIds.join('|') +
-              '&props=claims|descriptions&languages=en&format=json&origin=*');
-            for (const candidateId of searchIds) {
-              const candidate = entityData.entities && entityData.entities[candidateId];
-              if (candidate && isMusicEntity(candidate)) {
-                entity = candidate;
-                qid = candidateId;
-                break;
-              }
-            }
-          }
-        }
+        let qid = (linked && linked.qid) || (wiki && wiki.qid ? wiki.qid : '');
+        let entity = (linked && linked.entity) || (wiki && wiki.entity ? wiki.entity : null);
         if (entity) {
             const ids = [];
             for (const property of ['P19', 'P27', 'P106', 'P136', 'P264', 'P740', 'P527', 'P1303']) {
@@ -1533,6 +1672,20 @@
             const musicbrainz = claimValue(entity, 'P434');
             if (musicbrainz) { links.push({ label: 'MusicBrainz', url: 'https://musicbrainz.org/artist/' + musicbrainz }); }
             if (qid) { links.push({ label: 'Wikidata', url: 'https://www.wikidata.org/wiki/' + qid }); }
+            const identifiers = [
+              ['P1953', 'Discogs', (id) => 'https://www.discogs.com/artist/' + id],
+              ['P1728', 'AllMusic', (id) => 'https://www.allmusic.com/artist/' + id],
+              ['P2373', 'Genius', (id) => 'https://genius.com/artists/' + id],
+              ['P3040', 'SoundCloud', (id) => 'https://soundcloud.com/' + id],
+              ['P3283', 'Bandcamp', (id) => 'https://' + id + '.bandcamp.com'],
+              ['P2850', 'Apple Music', (id) => 'https://music.apple.com/artist/' + id]
+            ];
+            for (const [property, name, build] of identifiers) {
+              const value = claimValue(entity, property);
+              if (typeof value === 'string' && value) {
+                links.push({ label: name, url: build(value) });
+              }
+            }
             if (summary && summary.content_urls && summary.content_urls.desktop) {
               links.unshift({ label: 'Wikipedia', url: summary.content_urls.desktop.page });
             }
@@ -1577,8 +1730,31 @@
       } catch (error) {
         wikidata = null;
       }
+      if (mb) {
+        const mbFacts = musicBrainzFacts(mb);
+        const mbLinks = musicBrainzLinks(mb, artistUrl);
+        if (!wikidata) {
+          wikidata = { facts: mbFacts, links: mbLinks, qid: '' };
+        } else {
+          for (const [label, value] of mbFacts) {
+            if (!wikidata.facts.some(([key]) => key === label)) { wikidata.facts.push([label, value]); }
+          }
+          const seenLabels = new Set(wikidata.links.map((link) => String(link.label || '').toLowerCase()));
+          for (const link of mbLinks) {
+            const labelKey = String(link.label || '').toLowerCase();
+            const normalizedUrl = String(link.url || '').toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+            const duplicate = wikidata.links.some((existing) => {
+              const existingUrl = String(existing.url || '').toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+              return existingUrl === normalizedUrl;
+            });
+            if (seenLabels.has(labelKey) || duplicate) { continue; }
+            wikidata.links.push(link);
+            seenLabels.add(labelKey);
+          }
+        }
+      }
 
-      const commons = await fetchArtistImages(wiki ? wiki.title : '', name);
+      const commons = wiki ? await fetchArtistImages(wiki.title, name) : [];
       const images = [];
       if (summary && summary.thumbnail && summary.thumbnail.source) { images.push(summary.thumbnail.source); }
       commons.forEach((url) => {
