@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.2.6';
+  const VERSION = '3.3.0';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -218,6 +218,7 @@
     if (old) { old.remove(); }
     document.querySelectorAll('[data-sum-toggle="true"]').forEach((node) => node.remove());
     if (window.__SUM_TIMER__) { clearInterval(window.__SUM_TIMER__); }
+    if (window.__SUM_MENU_OBSERVER__) { window.__SUM_MENU_OBSERVER__.disconnect(); window.__SUM_MENU_OBSERVER__ = null; }
     resetInjectedSheets();
     installSheet('base', CSS);
 
@@ -320,6 +321,18 @@
     setTab(state.tab, true);
     setOpen(state.open, true);
     ensurePlayerButton();
+
+    window.__SUM_MENU_OBSERVER__ = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (!(node instanceof HTMLElement)) { continue; }
+          if (node.matches('[role="menu"]')) { decorateMenu(node); }
+          if (node.querySelectorAll) { node.querySelectorAll('[role="menu"]').forEach(decorateMenu); }
+        }
+      }
+    });
+    window.__SUM_MENU_OBSERVER__.observe(document.body, { childList: true, subtree: true });
+    decorateAllMenus();
   }
 
   function ensurePlayerButton() {
@@ -369,6 +382,51 @@
     button.setAttribute('aria-pressed', state.open ? 'true' : 'false');
     button.dataset.active = state.open ? 'true' : 'false';
     button.style.color = state.open ? 'var(--essential-bright-accent, #1ed760)' : '';
+  }
+
+  function closeSpotifyMenus() {
+    ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach((type) => {
+      try {
+        const EventCtor = type.indexOf('pointer') === 0 ? PointerEvent : MouseEvent;
+        document.body.dispatchEvent(new EventCtor(type, { bubbles: true, clientX: 8, clientY: 8 }));
+      } catch (error) { }
+    });
+  }
+
+  function decorateMenu(menu) {
+    try {
+      if (!menu || menu.getAttribute('data-sum-enhanced') === 'true') { return; }
+      const items = menu.querySelectorAll(':scope > li[role="presentation"]');
+      if (!items.length) { return; }
+      const entry = items[0].cloneNode(true);
+      const button = entry.querySelector('[role="menuitem"]');
+      if (!button) { return; }
+      entry.setAttribute('data-sum-menu', 'true');
+      button.removeAttribute('aria-haspopup');
+      button.removeAttribute('aria-expanded');
+      button.setAttribute('aria-label', 'Ultimate Mod settings');
+      const label = button.querySelector('[data-encore-id="text"]');
+      if (label) {
+        label.textContent = 'Ultimate Mod settings';
+        const labelWrap = label.parentElement;
+        [...button.children].forEach((child) => { if (child !== labelWrap) { child.remove(); } });
+      } else {
+        button.textContent = 'Ultimate Mod settings';
+      }
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setTab('style');
+        setOpen(true);
+        closeSpotifyMenus();
+      });
+      menu.insertBefore(entry, menu.firstElementChild);
+      menu.setAttribute('data-sum-enhanced', 'true');
+    } catch (error) { }
+  }
+
+  function decorateAllMenus() {
+    document.querySelectorAll('[role="menu"]').forEach(decorateMenu);
   }
 
   function populateLanguages(list) {
@@ -1014,6 +1072,7 @@
   function loop() {
     syncTrack();
     ensurePlayerButton();
+    decorateAllMenus();
     if (state.open && state.tab === 'lyrics' && state.lines.length) {
       updateActive(false);
     }

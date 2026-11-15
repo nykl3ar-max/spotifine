@@ -83,6 +83,7 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | **Style** tab | Seven themes, custom accent colour, auto-scroll toggle and a custom CSS box with Apply/Reset |
 | **Ctrl+Shift+U** | Open or close the panel |
 | **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
+| **Spotify menus** | Adds an **Ultimate Mod settings** entry to the profile menu and to three-dot menus, opening the Style tab |
 
 Settings, theme choice and translation cache are stored in Spotify's own local storage, so they survive restarts.
 
