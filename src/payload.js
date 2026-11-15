@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.3.0';
+  const VERSION = '3.4.0';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -20,6 +20,7 @@
     mode: 'sum.mode',
     size: 'sum.size',
     css: 'sum.customCss',
+    html: 'sum.customHtml',
     open: 'sum.open',
     tab: 'sum.tab',
     scroll: 'sum.autoscroll',
@@ -155,6 +156,28 @@
       .replace(/<\/?script[^>]*>/gi, '');
   }
 
+  function sanitizeHtml(value) {
+    try {
+      const doc = new DOMParser().parseFromString('<div id="sum-html-root">' + String(value || '') + '</div>', 'text/html');
+      const root = doc.getElementById('sum-html-root');
+      if (!root) { return ''; }
+      root.querySelectorAll('script,style,link,meta,iframe,object,embed,base,form').forEach((node) => node.remove());
+      root.querySelectorAll('*').forEach((element) => {
+        [...element.attributes].forEach((attribute) => {
+          const name = attribute.name.toLowerCase();
+          if (name.indexOf('on') === 0 || name === 'srcdoc') {
+            element.removeAttribute(attribute.name);
+          } else if ((name === 'href' || name === 'src' || name === 'xlink:href') && /^\s*javascript:/i.test(attribute.value)) {
+            element.removeAttribute(attribute.name);
+          }
+        });
+      });
+      return root.innerHTML;
+    } catch (error) {
+      return '';
+    }
+  }
+
   const html = `
     <aside id="sum-panel" aria-label="Spotify Ultimate Mod panel">
       <header class="sum-header">
@@ -205,6 +228,13 @@
             <button type="button" id="sum-css-reset" class="sum-btn sum-ghost">Reset</button>
           </div>
           <div class="sum-note">Custom CSS is sanitised: imports and remote URLs are removed.</div>
+          <div class="sum-label">Custom HTML</div>
+          <textarea id="sum-html" class="sum-textarea" spellcheck="false" placeholder="<!-- Add your own markup -->"></textarea>
+          <div class="sum-row sum-actions">
+            <button type="button" id="sum-html-apply" class="sum-btn">Apply</button>
+            <button type="button" id="sum-html-reset" class="sum-btn sum-ghost">Reset</button>
+          </div>
+          <div class="sum-note">HTML is rendered in #sum-custom-html; scripts, iframes and inline handlers are removed.</div>
           <div class="sum-note">Translation and pronunciation modelled on <a class="sum-link" href="https://github.com/TheoreticallyBryChen/Lingo-lyrics" target="_blank" rel="noreferrer noopener">Lingo-lyrics</a> (independent implementation).</div>
         </section>
       </div>
@@ -247,7 +277,10 @@
       roman: root.querySelector('#sum-roman'),
       css: root.querySelector('#sum-css'),
       cssApply: root.querySelector('#sum-css-apply'),
-      cssReset: root.querySelector('#sum-css-reset')
+      cssReset: root.querySelector('#sum-css-reset'),
+      html: root.querySelector('#sum-html'),
+      htmlApply: root.querySelector('#sum-html-apply'),
+      htmlReset: root.querySelector('#sum-html-reset')
     };
 
     populateLanguages(LANGUAGES);
@@ -256,6 +289,7 @@
     refs.scroll.checked = state.autoscroll;
     refs.roman.checked = state.romanize;
     refs.css.value = readSetting(LS.css, '');
+    refs.html.value = readSetting(LS.html, '');
     refs.accent.value = state.accent || themeById(state.theme).accent;
 
     for (const theme of THEMES) {
@@ -315,9 +349,19 @@
       writeSetting(LS.css, '');
       installSheet('custom', '');
     });
+    refs.htmlApply.addEventListener('click', () => {
+      writeSetting(LS.html, refs.html.value);
+      applyCustomHtml(refs.html.value);
+    });
+    refs.htmlReset.addEventListener('click', () => {
+      refs.html.value = '';
+      writeSetting(LS.html, '');
+      applyCustomHtml('');
+    });
 
     applyTheme();
     applyCustomCss(readSetting(LS.css, ''));
+    applyCustomHtml(readSetting(LS.html, ''));
     setTab(state.tab, true);
     setOpen(state.open, true);
     ensurePlayerButton();
@@ -485,6 +529,13 @@
     root.style.setProperty('--essential-base', accent);
     root.style.setProperty('--essential-bright-accent', accent);
     root.style.setProperty('--sum-accent', accent);
+    root.style.setProperty('--sum-bg-base', theme.vars['--background-base']);
+    root.style.setProperty('--sum-bg-elevated', theme.vars['--background-elevated-base']);
+    root.style.setProperty('--sum-bg-elevated-highlight', theme.vars['--background-elevated-highlight']);
+    root.style.setProperty('--sum-bg-tinted', theme.vars['--background-tinted-base']);
+    root.style.setProperty('--sum-bg-tinted-highlight', theme.vars['--background-tinted-highlight']);
+    root.style.setProperty('--sum-text', theme.vars['--text-base']);
+    root.style.setProperty('--sum-text-subdued', theme.vars['--text-subdued']);
     root.setAttribute('data-sum-theme', theme.id);
     if (refs.themes) {
       refs.themes.querySelectorAll('.sum-theme').forEach((button) => {
@@ -496,6 +547,17 @@
   function applyCustomCss(value) {
     const css = typeof value === 'string' ? value : refs.css.value;
     installSheet('custom', sanitizeCss(css));
+  }
+
+  function applyCustomHtml(value) {
+    const markup = typeof value === 'string' ? value : (refs.html ? refs.html.value : '');
+    let host = document.getElementById('sum-custom-html');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'sum-custom-html';
+      document.body.appendChild(host);
+    }
+    host.innerHTML = sanitizeHtml(markup);
   }
 
   function changeFont(delta) {
@@ -1095,6 +1157,7 @@
     installSheet('base', CSS);
     installSheet('custom', sanitizeCss(readSetting(LS.css, '')));
     applyTheme();
+    applyCustomHtml(readSetting(LS.html, ''));
     syncTrack();
   };
   window.__SUM__ = {

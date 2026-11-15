@@ -23,7 +23,7 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 | **Pronunciation** | Romanised pronunciation for non-Latin lyrics (romaji, romaja, pinyin and more), shown under each line |
 | **Artist panel** | Verified biography, portrait, birth details, country, genres, profession, label and verified links from Wikipedia and Wikidata |
 | **Themes** | Seven colour themes plus a custom accent, applied to the entire Spotify interface instantly |
-| **Custom CSS** | Style any part of Spotify from the panel; imports and remote URLs are stripped for safety |
+| **Custom CSS and HTML** | Restyle the whole client and inject your own markup from the panel; CSS imports/remote URLs, scripts, iframes and inline handlers are stripped |
 | **Zero footprint on disk** | Spotify's files are never patched. The interface is injected into the running app and disappears on restart |
 
 ---
@@ -80,7 +80,7 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | --- | --- |
 | **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
 | **Artist** tab | Portrait, biography, documented facts and verified links for the current artist |
-| **Style** tab | Seven themes, custom accent colour, auto-scroll toggle and a custom CSS box with Apply/Reset |
+| **Style** tab | Seven themes, custom accent colour, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
 | **Ctrl+Shift+U** | Open or close the panel |
 | **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
 | **Spotify menus** | Adds an **Ultimate Mod settings** entry to the profile menu and to three-dot menus, opening the Style tab |
@@ -91,11 +91,13 @@ Settings, theme choice and translation cache are stored in Spotify's own local s
 
 Spotify (the default: `#121212` surfaces, white text, `#1ed760` green), Midnight (violet), AMOLED (true black, mint), Neon (magenta), Ocean (cyan), Crimson (red) and Aurora (green). Theme colours are applied through Spotify's own CSS variables, so every surface — sidebar, cards, player, menus — changes together.
 
+Theme values are also forced onto Spotify's own theme wrappers, so the base surface, sidebars, cards, player, menus, dialogs and listboxes follow the selected theme instead of staying on Spotify's defaults. Artwork-derived header gradients are left intact.
+
 The panel itself uses Spotify's design language rather than its own: SpotifyMixUI typography, 8px panels with matching gaps, `#121212` surfaces, pill buttons and the same green accent, so it reads as part of the client instead of an overlay.
 
-### Custom CSS
+### Custom CSS and HTML
 
-The Style tab accepts CSS for the whole client. A few variables are available:
+The Style tab accepts CSS for the whole client and HTML for a custom widget layer. A few variables are available in CSS:
 
 ```css
 :root {
@@ -107,6 +109,19 @@ The Style tab accepts CSS for the whole client. A few variables are available:
 ```
 
 The mod's own selectors are prefixed `sum-` (`#sum-panel`, `.sum-line-text`, `.sum-line-trans`) if you want to restyle the panel itself. `@import`, `javascript:` and remote `url()` references are removed before the CSS is applied.
+
+Custom HTML is rendered into a container with the id `sum-custom-html`, docked at the bottom left above the player. Style or reposition it with custom CSS:
+
+```html
+<div class="my-widget">Now playing: your own content here</div>
+```
+
+```css
+#sum-custom-html { left: auto; right: 16px; bottom: 96px; }
+.my-widget { padding: 12px; border-radius: 8px; background: #1f1f1f; color: #fff; }
+```
+
+`<script>`, `<style>`, `<iframe>`, `<object>`, `<embed>`, `javascript:` URLs and inline `on*` handlers are stripped from custom HTML.
 
 ---
 
