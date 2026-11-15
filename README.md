@@ -5,7 +5,7 @@
 One command installs it. Nothing else to download, no Node.js, no build tools, no account setup.
 
 ```powershell
-irm https://raw.githubusercontent.com/nykl3ar-max/spotify-ultimate-mod-injector/main/install.ps1 | iex
+irm https://github.com/nykl3ar-max/spotify-ultimate-mod-injector/raw/refs/heads/main/install.ps1 | iex
 ```
 
 After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or click the **Ultimate** button to open the panel.
@@ -33,7 +33,7 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 2. Paste:
 
 ```powershell
-irm https://raw.githubusercontent.com/nykl3ar-max/spotify-ultimate-mod-injector/main/install.ps1 | iex
+irm https://github.com/nykl3ar-max/spotify-ultimate-mod-injector/raw/refs/heads/main/install.ps1 | iex
 ```
 
 3. Wait for `Spotify Ultimate Mod is ready.`
@@ -55,7 +55,7 @@ Run the install command again. Files are replaced and the watcher restarts.
 ### Uninstalling
 
 ```powershell
-irm https://raw.githubusercontent.com/nykl3ar-max/spotify-ultimate-mod-injector/main/uninstall.ps1 | iex
+irm https://github.com/nykl3ar-max/spotify-ultimate-mod-injector/raw/refs/heads/main/uninstall.ps1 | iex
 ```
 
 This removes the launchers and mod files. Spotify itself is untouched; the mod is gone the next time Spotify starts normally.
