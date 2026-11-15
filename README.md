@@ -8,7 +8,7 @@ One command installs it. Nothing else to download, no Node.js, no build tools, n
 irm https://github.com/nykl3ar-max/spotify-ultimate-mod-injector/raw/refs/heads/main/install.ps1 | iex
 ```
 
-After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or click the **Ultimate** button to open the panel.
+After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or click the mod's button in the player bar, next to Spotify's own lyrics button, to open the panel.
 
 > Independent project. Not affiliated with, endorsed by or sponsored by Spotify AB. Read [Good to know](#good-to-know) before installing.
 
@@ -22,7 +22,7 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 | **Automatic translation** | Translates the playing lyrics into 249 languages, original and translation side by side, per-line cache |
 | **Pronunciation** | Romanised pronunciation for non-Latin lyrics (romaji, romaja, pinyin and more), shown under each line |
 | **Artist panel** | Verified biography, portrait, birth details, country, genres, profession, label and verified links from Wikipedia and Wikidata |
-| **Themes** | Six colour themes plus a custom accent, applied to the entire Spotify interface instantly |
+| **Themes** | Seven colour themes plus a custom accent, applied to the entire Spotify interface instantly |
 | **Custom CSS** | Style any part of Spotify from the panel; imports and remote URLs are stripped for safety |
 | **Zero footprint on disk** | Spotify's files are never patched. The interface is injected into the running app and disappears on restart |
 
@@ -80,15 +80,17 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | --- | --- |
 | **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
 | **Artist** tab | Portrait, biography, documented facts and verified links for the current artist |
-| **Style** tab | Six themes, custom accent colour, auto-scroll toggle and a custom CSS box with Apply/Reset |
+| **Style** tab | Seven themes, custom accent colour, auto-scroll toggle and a custom CSS box with Apply/Reset |
 | **Ctrl+Shift+U** | Open or close the panel |
-| **Ultimate button** | Same as the shortcut, for mouse users |
+| **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
 
 Settings, theme choice and translation cache are stored in Spotify's own local storage, so they survive restarts.
 
 ### Themes
 
-Midnight (violet), AMOLED (true black, mint), Neon (magenta), Ocean (cyan), Crimson (red) and Aurora (green). Theme colours are applied through Spotify's own CSS variables, so every surface — sidebar, cards, player, menus — changes together.
+Spotify (the default: `#121212` surfaces, white text, `#1ed760` green), Midnight (violet), AMOLED (true black, mint), Neon (magenta), Ocean (cyan), Crimson (red) and Aurora (green). Theme colours are applied through Spotify's own CSS variables, so every surface — sidebar, cards, player, menus — changes together.
+
+The panel itself uses Spotify's design language rather than its own: SpotifyMixUI typography, 8px panels with matching gaps, `#121212` surfaces, pill buttons and the same green accent, so it reads as part of the client instead of an overlay.
 
 ### Custom CSS
 
@@ -96,14 +98,14 @@ The Style tab accepts CSS for the whole client. A few variables are available:
 
 ```css
 :root {
-  --background-base: #0b0b10;
-  --text-base: #f5f5f7;
-  --essential-bright-accent: #8b5cf6;
-  --sum-accent: #8b5cf6;
+  --background-base: #121212;
+  --text-base: #ffffff;
+  --essential-bright-accent: #1ed760;
+  --sum-accent: #1ed760;
 }
 ```
 
-The mod's own selectors are prefixed `sum-` (`#sum-panel`, `.sum-line`, `.sum-lyric-text`) if you want to restyle the panel itself. `@import`, `javascript:` and remote `url()` references are removed before the CSS is applied.
+The mod's own selectors are prefixed `sum-` (`#sum-panel`, `.sum-line-text`, `.sum-line-trans`) if you want to restyle the panel itself. `@import`, `javascript:` and remote `url()` references are removed before the CSS is applied.
 
 ---
 

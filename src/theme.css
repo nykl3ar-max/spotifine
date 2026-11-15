@@ -1,153 +1,115 @@
-/* Spotify Ultimate Mod — injected panel styles */
+/* Spotify Ultimate Mod — panel styled to match the Spotify desktop client */
 
 #sum-root {
-  --sum-accent: #8b5cf6;
-  --sum-panel-bg: color-mix(in srgb, var(--background-elevated-base, #15151d) 92%, transparent);
-  --sum-line: color-mix(in srgb, var(--text-base, #fff) 12%, transparent);
-  --sum-muted: var(--text-subdued, #a5a5b4);
   position: fixed;
-  z-index: 2147483000;
   inset: 0;
+  z-index: 2147483000;
   pointer-events: none;
-  font-family: var(--font-family, 'Segoe UI', system-ui, sans-serif);
   color: var(--text-base, #fff);
+  font-family: var(--font-family, "SpotifyMixUI", "Helvetica Neue", Helvetica, Arial, sans-serif);
+  -webkit-font-smoothing: antialiased;
 }
 
 #sum-root * {
   box-sizing: border-box;
 }
 
-#sum-toggle {
-  position: fixed;
-  right: 18px;
-  bottom: 104px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: 1px solid color-mix(in srgb, var(--sum-accent) 45%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--sum-accent) 18%, var(--background-elevated-base, #15151d));
-  color: var(--text-base, #fff);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  pointer-events: auto;
-  box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.9);
-  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
-}
-
-#sum-toggle:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 50px -18px color-mix(in srgb, var(--sum-accent) 70%, transparent);
-}
-
-#sum-toggle.is-hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.sum-glyph {
-  font-size: 15px;
-  color: var(--sum-accent);
-}
-
 #sum-panel {
   position: fixed;
-  top: 72px;
-  right: 18px;
-  bottom: 108px;
-  width: 404px;
-  max-width: calc(100vw - 36px);
+  top: 8px;
+  right: 8px;
+  bottom: 88px;
+  width: 372px;
+  max-width: calc(100vw - 16px);
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--sum-line);
-  border-radius: 18px;
-  background: var(--sum-panel-bg);
-  backdrop-filter: blur(22px) saturate(140%);
-  box-shadow: 0 30px 90px -30px rgba(0, 0, 0, 0.95);
   overflow: hidden;
   pointer-events: auto;
+  background: var(--background-base, #121212);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  backdrop-filter: none;
+  box-shadow: none;
   opacity: 0;
-  transform: translateY(12px) scale(0.99);
   visibility: hidden;
-  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  transform: translateX(12px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
 }
 
 #sum-panel.is-open {
   opacity: 1;
-  transform: translateY(0) scale(1);
   visibility: visible;
+  transform: none;
 }
 
 .sum-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--sum-line);
-}
-
-.sum-brand {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  gap: 8px;
+  min-height: 56px;
+  padding: 0 12px 0 16px;
+  flex: 0 0 auto;
 }
 
 .sum-tabs {
   display: flex;
-  gap: 2px;
-  margin-left: auto;
-  background: color-mix(in srgb, var(--text-base, #fff) 6%, transparent);
-  border-radius: 999px;
-  padding: 3px;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
 }
 
 .sum-tab {
+  height: 32px;
+  padding: 0 12px;
   border: 0;
+  border-radius: 9999px;
   background: transparent;
-  color: var(--sum-muted);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.14s ease, color 0.14s ease;
-}
-
-.sum-tab:hover { color: var(--text-base, #fff); }
-
-.sum-tab.is-active {
-  background: var(--sum-accent);
-  color: #0b0b10;
-}
-
-.sum-icon {
-  border: 0;
-  background: transparent;
-  color: var(--sum-muted);
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
+  color: var(--text-subdued, #b3b3b3);
+  font-family: inherit;
   font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.14s ease, color 0.14s ease;
+  white-space: nowrap;
+  transition: color 0.1s ease, background-color 0.1s ease;
 }
 
-.sum-icon:hover {
-  background: color-mix(in srgb, var(--text-base, #fff) 10%, transparent);
+.sum-tab:hover {
   color: var(--text-base, #fff);
 }
 
+.sum-tab.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-base, #fff);
+}
+
+.sum-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-subdued, #b3b3b3);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.1s ease, background-color 0.1s ease;
+}
+
+.sum-icon:hover {
+  color: var(--text-base, #fff);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .sum-body {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  padding: 0 16px;
 }
 
 .sum-section {
@@ -155,7 +117,6 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  padding: 12px 14px 4px;
 }
 
 .sum-section.is-active {
@@ -166,77 +127,105 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 8px;
-}
-
-.sum-select,
-.sum-textarea,
-.sum-color {
-  background: color-mix(in srgb, var(--text-base, #fff) 7%, transparent);
-  color: var(--text-base, #fff);
-  border: 1px solid var(--sum-line);
-  border-radius: 9px;
-  font-size: 12px;
-  padding: 6px 8px;
-  outline: none;
+  padding: 4px 0 8px;
+  flex: 0 0 auto;
 }
 
 .sum-select {
+  height: 32px;
   min-width: 0;
+  padding: 0 26px 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: #2a2a2a;
+  color: var(--text-base, #fff);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-#sum-lang { flex: 1 1 46%; }
-#sum-mode { flex: 1 1 46%; }
+.sum-select:hover {
+  background: #333;
+}
 
 .sum-select option {
-  background: #15151d;
+  background: #282828;
   color: #fff;
 }
 
+#sum-lang { flex: 1 1 44%; }
+#sum-mode { flex: 1 1 44%; }
+
 .sum-status {
+  flex: 0 0 auto;
+  padding: 0 0 8px;
+  color: var(--text-subdued, #b3b3b3);
   font-size: 12px;
-  color: var(--sum-muted);
-  padding: 4px 2px 8px;
+  line-height: 1.4;
 }
 
-.sum-lyrics {
-  flex: 1;
+.sum-lyrics,
+.sum-artist {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 6px 4px 28px;
+  padding: 4px 0 32px;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--sum-accent) 50%, transparent) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.sum-lyrics::-webkit-scrollbar,
+.sum-artist::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sum-lyrics::-webkit-scrollbar-thumb,
+.sum-artist::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
 }
 
 .sum-line {
-  padding: 7px 6px;
-  border-radius: 10px;
-  border-left: 2px solid transparent;
-  opacity: 0.62;
-  transition: opacity 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  opacity: 1;
 }
 
 .sum-line-text {
-  font-size: var(--sum-lyric-size, 15px);
-  line-height: 1.42;
-  font-weight: 600;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  transition: color 0.12s ease, font-size 0.12s ease;
+}
+
+.sum-line.is-active {
+  background: none;
+}
+
+.sum-line.is-active .sum-line-text {
+  color: var(--text-base, #fff);
 }
 
 .sum-line-roman {
-  font-size: calc(var(--sum-lyric-size, 15px) * 0.78);
-  line-height: 1.35;
-  margin-top: 2px;
-  color: color-mix(in srgb, var(--text-base, #fff) 55%, transparent);
+  margin-top: 1px;
+  color: #8f8f8f;
+  font-size: 12px;
   font-style: italic;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .sum-line-trans {
-  font-size: calc(var(--sum-lyric-size, 15px) * 0.84);
-  line-height: 1.4;
-  margin-top: 3px;
-  color: var(--sum-accent);
-  font-weight: 500;
+  margin-top: 2px;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
 }
 
 .sum-lyrics.mode-translated .sum-line-text {
@@ -244,229 +233,288 @@
 }
 
 .sum-lyrics.mode-translated .sum-line-trans {
-  font-size: var(--sum-lyric-size, 15px);
   color: var(--text-base, #fff);
-}
-
-.sum-line.is-active {
-  opacity: 1;
-  border-left-color: var(--sum-accent);
-  background: color-mix(in srgb, var(--sum-accent) 12%, transparent);
-}
-
-.sum-line.is-active .sum-line-text {
-  color: #fff;
-  text-shadow: 0 0 32px color-mix(in srgb, var(--sum-accent) 55%, transparent);
-}
-
-.sum-artist {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 4px 2px 24px;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .sum-artist-hero {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 12px;
+  padding-bottom: 12px;
 }
 
 .sum-artist-image {
   width: 100%;
-  height: 160px;
+  height: 168px;
   object-fit: cover;
-  border-radius: 14px;
-  border: 1px solid var(--sum-line);
+  border-radius: 8px;
 }
 
 .sum-artist-name {
-  font-size: 20px;
+  color: var(--text-base, #fff);
+  font-size: 24px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .sum-summary {
-  font-size: 12.5px;
+  margin: 0 0 16px;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 13px;
+  font-weight: 400;
   line-height: 1.55;
-  color: color-mix(in srgb, var(--text-base, #fff) 82%, transparent);
-  margin: 0 0 12px;
 }
 
 .sum-facts {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  border: 1px solid var(--sum-line);
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .sum-fact {
   display: flex;
-  gap: 10px;
-  padding: 8px 10px;
-  background: color-mix(in srgb, var(--text-base, #fff) 4%, transparent);
-  font-size: 12px;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12.5px;
+  line-height: 1.4;
 }
 
 .sum-fact-key {
-  flex: 0 0 92px;
-  color: var(--sum-muted);
+  flex: 0 0 96px;
+  color: var(--text-subdued, #b3b3b3);
 }
 
 .sum-fact-value {
   flex: 1;
-  font-weight: 600;
+  color: var(--text-base, #fff);
+  font-weight: 500;
 }
 
 .sum-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .sum-link {
-  text-decoration: none;
-  font-size: 11.5px;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--sum-accent) 40%, transparent);
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid #727272;
+  border-radius: 9999px;
   color: var(--text-base, #fff);
-  background: color-mix(in srgb, var(--sum-accent) 10%, transparent);
-  transition: background 0.14s ease;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 0.1s ease, transform 0.1s ease;
 }
 
 .sum-link:hover {
-  background: color-mix(in srgb, var(--sum-accent) 26%, transparent);
+  border-color: #fff;
+  transform: scale(1.02);
+  text-decoration: none;
 }
 
 .sum-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--sum-muted);
-  margin: 10px 0 6px;
+  margin: 12px 0 8px;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .sum-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+  min-height: 40px;
 }
 
-.sum-row .sum-label { margin: 6px 0; }
+.sum-row .sum-label {
+  margin: 0;
+}
 
 .sum-color {
   width: 44px;
-  height: 28px;
+  height: 26px;
   padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: transparent;
   cursor: pointer;
 }
 
 .sum-check {
   width: 16px;
   height: 16px;
-  accent-color: var(--sum-accent);
+  accent-color: var(--essential-bright-accent, #1ed760);
   cursor: pointer;
 }
 
 .sum-themes {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 8px;
 }
 
 .sum-theme {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--sum-line);
-  background: color-mix(in srgb, var(--text-base, #fff) 4%, transparent);
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: var(--background-elevated-base, #1f1f1f);
   color: var(--text-base, #fff);
-  font-size: 12px;
+  font-family: inherit;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.14s ease, background 0.14s ease;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
 }
 
 .sum-theme:hover {
-  background: color-mix(in srgb, var(--sum-accent) 12%, transparent);
+  background: #2a2a2a;
 }
 
 .sum-theme.is-active {
-  border-color: var(--sum-accent);
-  box-shadow: inset 0 0 0 1px var(--sum-accent);
+  border-color: var(--essential-bright-accent, #1ed760);
 }
 
 .sum-theme-dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
   flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
 .sum-textarea {
   width: 100%;
-  min-height: 110px;
-  max-height: 220px;
-  resize: vertical;
-  font-family: 'Cascadia Code', Consolas, monospace;
-  font-size: 11.5px;
-  line-height: 1.5;
+  min-height: 104px;
+  max-height: 200px;
   padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: #2a2a2a;
+  color: var(--text-base, #fff);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+}
+
+.sum-textarea:focus {
+  border-color: #727272;
 }
 
 .sum-actions {
   justify-content: flex-start;
-  margin-top: 8px;
+  gap: 8px;
+  padding-top: 8px;
 }
 
 .sum-btn {
-  border: 1px solid transparent;
-  background: var(--sum-accent);
-  color: #0b0b10;
-  font-size: 12px;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--essential-bright-accent, #1ed760);
+  color: #000;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 700;
-  padding: 7px 14px;
-  border-radius: 9px;
   cursor: pointer;
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.sum-btn:hover {
+  transform: scale(1.03);
 }
 
 .sum-btn.sum-ghost {
   background: transparent;
-  border-color: var(--sum-line);
+  border: 1px solid #727272;
   color: var(--text-base, #fff);
 }
 
+.sum-btn.sum-ghost:hover {
+  border-color: #fff;
+}
+
 .sum-note {
-  font-size: 10.5px;
+  margin-top: 10px;
+  color: #6f6f6f;
+  font-size: 11px;
+  font-weight: 400;
   line-height: 1.45;
-  color: var(--sum-muted);
-  margin-top: 8px;
+}
+
+.sum-note .sum-link {
+  height: auto;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  text-decoration: underline;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .sum-footer {
-  border-top: 1px solid var(--sum-line);
-  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: #6f6f6f;
   font-size: 11px;
-  color: var(--sum-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 0 0 auto;
+}
+
+/* Fallback launcher, used only when the native control bar cannot host the button */
+
+#sum-toggle {
+  font-family: var(--font-family, "SpotifyMixUI", sans-serif);
+}
+
+#sum-toggle.sum-fallback {
+  position: fixed;
+  right: 16px;
+  bottom: 96px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--text-subdued, #b3b3b3);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#sum-toggle.sum-fallback:hover {
+  color: #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {
   #sum-panel,
-  #sum-toggle,
-  .sum-line {
+  .sum-line-text,
+  .sum-btn,
+  .sum-link {
     transition: none;
   }
 }

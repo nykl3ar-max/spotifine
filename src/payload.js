@@ -1,16 +1,17 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.1.1';
+  const VERSION = '3.2.3';
   const CSS = window.__SUM_CSS__ || '';
 
-  if (window.__SUM_VERSION__ === VERSION && document.getElementById('sum-root')) {
+  if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
     if (typeof window.__SUM_REFRESH__ === 'function') {
       try { window.__SUM_REFRESH__(); } catch (error) { }
     }
     return 'ok';
   }
   window.__SUM_VERSION__ = VERSION;
+  window.__SUM_APPLIED_CSS__ = CSS;
 
   const LS = {
     theme: 'sum.theme',
@@ -53,6 +54,10 @@
 
   const THEMES = [
     {
+      id: 'spotify', name: 'Spotify', accent: '#1ed760',
+      vars: { '--background-base': '#121212', '--background-elevated-base': '#1f1f1f', '--background-elevated-highlight': '#2a2a2a', '--background-tinted-base': '#181818', '--background-tinted-highlight': '#242424', '--text-base': '#ffffff', '--text-subdued': '#b3b3b3', '--essential-base': '#1ed760', '--essential-bright-accent': '#1ed760' }
+    },
+    {
       id: 'midnight', name: 'Midnight', accent: '#8b5cf6',
       vars: { '--background-base': '#0b0b10', '--background-elevated-base': '#15151d', '--background-elevated-highlight': '#1c1c26', '--background-tinted-base': '#131319', '--background-tinted-highlight': '#1b1b25', '--text-base': '#f5f5f7', '--text-subdued': '#a5a5b4', '--essential-base': '#8b5cf6', '--essential-bright-accent': '#a78bfa' }
     },
@@ -80,7 +85,7 @@
 
   const state = {
     tab: readSetting(LS.tab, 'lyrics'),
-    theme: readSetting(LS.theme, 'midnight'),
+    theme: readSetting(LS.theme, 'spotify'),
     accent: readSetting(LS.accent, ''),
     lang: readSetting(LS.lang, 'en'),
     mode: readSetting(LS.mode, 'both'),
@@ -104,16 +109,32 @@
 
   const lyricCache = new Map();
   const artistCache = new Map();
-  const sheetStore = {};
+
+  function resetInjectedSheets() {
+    const registry = window.__SUM_SHEETS__;
+    if (registry) {
+      const stale = new Set(Object.values(registry));
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter((sheet) => !stale.has(sheet));
+    }
+    document.adoptedStyleSheets = document.adoptedStyleSheets.filter((sheet) => {
+      try {
+        return !Array.from(sheet.cssRules).some((rule) => rule.cssText.indexOf('#sum-panel') >= 0 || rule.cssText.indexOf('#sum-root') >= 0);
+      }
+      catch (error) { return true; }
+    });
+    window.__SUM_SHEETS__ = {};
+    document.querySelectorAll('style[id^="sum-style-"]').forEach((node) => node.remove());
+  }
 
   function installSheet(id, css) {
+    const registry = window.__SUM_SHEETS__ = window.__SUM_SHEETS__ || {};
     try {
-      if (!sheetStore[id]) {
+      if (!registry[id]) {
         const sheet = new CSSStyleSheet();
         document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
-        sheetStore[id] = sheet;
+        registry[id] = sheet;
       }
-      sheetStore[id].replaceSync(css);
+      registry[id].replaceSync(css);
     } catch (error) {
       let style = document.getElementById('sum-style-' + id);
       if (!style) {
@@ -135,12 +156,8 @@
   }
 
   const html = `
-    <button id="sum-toggle" type="button" aria-label="Open Spotify Ultimate Mod" title="Spotify Ultimate Mod (Ctrl+Shift+U)">
-      <span class="sum-glyph">&#9835;</span><span class="sum-toggle-text">Ultimate</span>
-    </button>
     <aside id="sum-panel" aria-label="Spotify Ultimate Mod panel">
       <header class="sum-header">
-        <div class="sum-brand">Ultimate Mod</div>
         <div class="sum-tabs">
           <button type="button" class="sum-tab" data-sum-tab="lyrics">Lyrics</button>
           <button type="button" class="sum-tab" data-sum-tab="artist">Artist</button>
@@ -191,7 +208,7 @@
           <div class="sum-note">Translation and pronunciation modelled on <a class="sum-link" href="https://github.com/TheoreticallyBryChen/Lingo-lyrics" target="_blank" rel="noreferrer noopener">Lingo-lyrics</a> (independent implementation).</div>
         </section>
       </div>
-      <footer class="sum-footer"><span id="sum-track-label">No track playing</span></footer>
+      <footer class="sum-footer"><span>Ultimate Mod · LRCLIB · Wikipedia · Wikidata</span></footer>
     </aside>`;
 
   let refs = {};
@@ -199,6 +216,10 @@
   function mount() {
     const old = document.getElementById('sum-root');
     if (old) { old.remove(); }
+    document.querySelectorAll('[data-sum-toggle="true"]').forEach((node) => node.remove());
+    if (window.__SUM_TIMER__) { clearInterval(window.__SUM_TIMER__); }
+    if (window.__SUM_KEY_HANDLER__) { document.removeEventListener('keydown', window.__SUM_KEY_HANDLER__); }
+    resetInjectedSheets();
     installSheet('base', CSS);
 
     const root = document.createElement('div');
@@ -209,7 +230,6 @@
 
     refs = {
       root,
-      toggle: root.querySelector('#sum-toggle'),
       panel: root.querySelector('#sum-panel'),
       close: root.querySelector('#sum-close'),
       tabs: [...root.querySelectorAll('.sum-tab')],
@@ -227,8 +247,7 @@
       roman: root.querySelector('#sum-roman'),
       css: root.querySelector('#sum-css'),
       cssApply: root.querySelector('#sum-css-apply'),
-      cssReset: root.querySelector('#sum-css-reset'),
-      trackLabel: root.querySelector('#sum-track-label')
+      cssReset: root.querySelector('#sum-css-reset')
     };
 
     populateLanguages(LANGUAGES);
@@ -256,7 +275,6 @@
       refs.themes.appendChild(button);
     }
 
-    refs.toggle.addEventListener('click', () => setOpen(!state.open));
     refs.close.addEventListener('click', () => setOpen(false));
     refs.tabs.forEach((tab) => tab.addEventListener('click', () => setTab(tab.dataset.sumTab)));
     refs.lang.addEventListener('change', () => {
@@ -302,7 +320,56 @@
     applyCustomCss(readSetting(LS.css, ''));
     setTab(state.tab, true);
     setOpen(state.open, true);
-    updateTrackLabel();
+    ensurePlayerButton();
+  }
+
+  function ensurePlayerButton() {
+    let button = document.querySelector('[data-sum-toggle="true"]');
+    if (button) { syncToggleState(); return; }
+
+    const lyricsButton = document.querySelector('[data-testid="lyrics-button"]');
+    if (lyricsButton && lyricsButton.parentElement) {
+      button = lyricsButton.cloneNode(true);
+      button.removeAttribute('data-testid');
+      button.setAttribute('id', 'sum-toggle');
+      button.setAttribute('data-sum-toggle', 'true');
+      button.setAttribute('aria-label', 'Spotify Ultimate Mod');
+      button.setAttribute('title', 'Spotify Ultimate Mod (Ctrl+Shift+U)');
+      button.classList.remove('sum-fallback');
+      const svg = button.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('viewBox', '0 0 16 16');
+        svg.innerHTML = '<path d="M2.6 2.1h10.8a.6.6 0 0 1 .6.6v7.3a.6.6 0 0 1-.6.6H7.1L4 13.4a.6.6 0 0 1-1-.5v-2.3h-.4a.6.6 0 0 1-.6-.6V2.7a.6.6 0 0 1 .6-.6zm1.2 2.3v1.1h8.4V4.4zm0 2.4v1.1h5.8V6.8z"/>';
+      }
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(!state.open);
+      });
+      lyricsButton.insertAdjacentElement('afterend', button);
+      syncToggleState();
+      return;
+    }
+
+    if (document.getElementById('sum-toggle')) { return; }
+    const fallback = document.createElement('button');
+    fallback.type = 'button';
+    fallback.id = 'sum-toggle';
+    fallback.className = 'sum-fallback';
+    fallback.setAttribute('data-sum-toggle', 'true');
+    fallback.setAttribute('aria-label', 'Spotify Ultimate Mod');
+    fallback.textContent = 'L';
+    fallback.addEventListener('click', () => setOpen(!state.open));
+    refs.root.appendChild(fallback);
+    syncToggleState();
+  }
+
+  function syncToggleState() {
+    const button = document.querySelector('[data-sum-toggle="true"]');
+    if (!button) { return; }
+    button.setAttribute('aria-pressed', state.open ? 'true' : 'false');
+    button.dataset.active = state.open ? 'true' : 'false';
+    button.style.color = state.open ? 'var(--essential-bright-accent, #1ed760)' : '';
   }
 
   function populateLanguages(list) {
@@ -385,7 +452,7 @@
     writeSetting(LS.open, state.open);
     if (!refs.panel) { return; }
     refs.panel.classList.toggle('is-open', state.open);
-    refs.toggle.classList.toggle('is-hidden', state.open);
+    syncToggleState();
     if (state.open && !immediate) {
       if (state.tab === 'artist') { loadArtistForCurrent(); }
       if (state.tab === 'lyrics') { updateActive(true); }
@@ -947,17 +1014,19 @@
 
   function loop() {
     syncTrack();
+    ensurePlayerButton();
     if (state.open && state.tab === 'lyrics' && state.lines.length) {
       updateActive(false);
     }
   }
 
-  document.addEventListener('keydown', (event) => {
+  window.__SUM_KEY_HANDLER__ = (event) => {
     if (event.ctrlKey && event.shiftKey && (event.key === 'U' || event.key === 'u')) {
       event.preventDefault();
       setOpen(!state.open);
     }
-  });
+  };
+  document.addEventListener('keydown', window.__SUM_KEY_HANDLER__);
 
   mount();
   syncTrack();
