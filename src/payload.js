@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.12.3';
+  const VERSION = '3.12.4';
   const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
   const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
   const FACT_ORDER = ['Birth name', 'Born', 'Died', 'Birthplace', 'Origin', 'Country', 'Type', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
@@ -2013,7 +2013,7 @@
 
     const note = document.createElement('div');
     note.className = 'sum-note';
-    note.textContent = 'Sources: Wikipedia, Wikidata and Spotify. Missing details are shown as Unknown.';
+    note.textContent = 'Sources: MusicBrainz, Wikipedia, Wikidata and Spotify. Missing details are shown as Unknown.';
     refs.artist.appendChild(note);
   }
 

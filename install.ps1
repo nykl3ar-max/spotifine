@@ -13,7 +13,7 @@
 #>
 
 $ErrorActionPreference = 'Stop'
-$Version = '3.12.3'
+$Version = '3.12.4'
 $Repo = 'nykl3ar-max/spotifine'
 $Branch = 'main'
 $BaseUrl = "https://raw.githubusercontent.com/$Repo/$Branch"
