@@ -19,7 +19,8 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 | Feature | Details |
 | --- | --- |
 | **Synced lyrics** | Time-aligned lyrics from LRCLIB, active line highlighted, auto-scroll, click-free reading |
-| **Automatic translation** | Translates the playing lyrics into 30 languages, original and translation side by side, per-line cache |
+| **Automatic translation** | Translates the playing lyrics into 249 languages, original and translation side by side, per-line cache |
+| **Pronunciation** | Romanised pronunciation for non-Latin lyrics (romaji, romaja, pinyin and more), shown under each line |
 | **Artist panel** | Verified biography, portrait, birth details, country, genres, profession, label and verified links from Wikipedia and Wikidata |
 | **Themes** | Six colour themes plus a custom accent, applied to the entire Spotify interface instantly |
 | **Custom CSS** | Style any part of Spotify from the panel; imports and remote URLs are stripped for safety |
@@ -62,11 +63,22 @@ This removes the launchers and mod files. Spotify itself is untouched; the mod i
 
 ---
 
+## Translation and pronunciation
+
+Translation follows the Lingo-lyrics approach: every line is translated in place, the translation sits directly under the original, and non-Latin scripts also get a romanised pronunciation line. The language picker is loaded live from Google Translate's public language list, so it offers the same broad coverage (249 languages, including regional variants) instead of a fixed short list.
+
+- **Both languages** shows original, pronunciation and translation.
+- **Translated only** and **Original only** switch the view instantly without refetching.
+- Translations and pronunciations are cached per line, so replaying a track costs no requests.
+- Language names are cached for a week, translations until the cache is cleared.
+
+> **Credit:** the translation and pronunciation behaviour is modelled on [Lingo-lyrics](https://github.com/TheoreticallyBryChen/Lingo-lyrics) by TheoreticallyBryChen. Lingo is a proprietary, closed-source project with no public API, so none of its code, assets or branding is used or redistributed here; this is an independent implementation against the public Google Translate endpoint.
+
 ## Using the panel
 
 | Control | What it does |
 | --- | --- |
-| **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`) and font size buttons |
+| **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
 | **Artist** tab | Portrait, biography, documented facts and verified links for the current artist |
 | **Style** tab | Six themes, custom accent colour, auto-scroll toggle and a custom CSS box with Apply/Reset |
 | **Ctrl+Shift+U** | Open or close the panel |

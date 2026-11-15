@@ -223,6 +223,14 @@
   font-weight: 600;
 }
 
+.sum-line-roman {
+  font-size: calc(var(--sum-lyric-size, 15px) * 0.78);
+  line-height: 1.35;
+  margin-top: 2px;
+  color: color-mix(in srgb, var(--text-base, #fff) 55%, transparent);
+  font-style: italic;
+}
+
 .sum-line-trans {
   font-size: calc(var(--sum-lyric-size, 15px) * 0.84);
   line-height: 1.4;

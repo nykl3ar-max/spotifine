@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.0.2';
+  const VERSION = '3.1.1';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && document.getElementById('sum-root')) {
@@ -22,7 +22,9 @@
     open: 'sum.open',
     tab: 'sum.tab',
     scroll: 'sum.autoscroll',
-    trans: 'sum.translations.v1'
+    romanize: 'sum.romanize',
+    languages: 'sum.languages.v1',
+    trans: 'sum.translations.v2'
   };
 
   const readSetting = (key, fallback) => {
@@ -84,6 +86,9 @@
     mode: readSetting(LS.mode, 'both'),
     size: Number(readSetting(LS.size, 15)) || 15,
     autoscroll: readSetting(LS.scroll, true),
+    romanize: readSetting(LS.romanize, true),
+    romanized: {},
+    languages: [],
     open: readSetting(LS.open, false),
     track: null,
     lines: [],
@@ -172,6 +177,10 @@
             <span class="sum-label">Auto-scroll lyrics</span>
             <input id="sum-scroll" type="checkbox" class="sum-check">
           </div>
+          <div class="sum-row">
+            <span class="sum-label">Pronunciation</span>
+            <input id="sum-roman" type="checkbox" class="sum-check">
+          </div>
           <div class="sum-label">Custom CSS</div>
           <textarea id="sum-css" class="sum-textarea" spellcheck="false" placeholder="/* Customise the interface */"></textarea>
           <div class="sum-row sum-actions">
@@ -179,6 +188,7 @@
             <button type="button" id="sum-css-reset" class="sum-btn sum-ghost">Reset</button>
           </div>
           <div class="sum-note">Custom CSS is sanitised: imports and remote URLs are removed.</div>
+          <div class="sum-note">Translation and pronunciation modelled on <a class="sum-link" href="https://github.com/TheoreticallyBryChen/Lingo-lyrics" target="_blank" rel="noreferrer noopener">Lingo-lyrics</a> (independent implementation).</div>
         </section>
       </div>
       <footer class="sum-footer"><span id="sum-track-label">No track playing</span></footer>
@@ -214,21 +224,18 @@
       themes: root.querySelector('#sum-themes'),
       accent: root.querySelector('#sum-accent'),
       scroll: root.querySelector('#sum-scroll'),
+      roman: root.querySelector('#sum-roman'),
       css: root.querySelector('#sum-css'),
       cssApply: root.querySelector('#sum-css-apply'),
       cssReset: root.querySelector('#sum-css-reset'),
       trackLabel: root.querySelector('#sum-track-label')
     };
 
-    for (const [code, label] of LANGUAGES) {
-      const option = document.createElement('option');
-      option.value = code;
-      option.textContent = label;
-      refs.lang.appendChild(option);
-    }
-    refs.lang.value = state.lang;
+    populateLanguages(LANGUAGES);
+    refreshLanguages();
     refs.mode.value = state.mode;
     refs.scroll.checked = state.autoscroll;
+    refs.roman.checked = state.romanize;
     refs.css.value = readSetting(LS.css, '');
     refs.accent.value = state.accent || themeById(state.theme).accent;
 
@@ -256,6 +263,7 @@
       state.lang = refs.lang.value;
       writeSetting(LS.lang, state.lang);
       state.translated = {};
+      state.romanized = {};
       translateLines();
       renderLyrics();
     });
@@ -269,6 +277,11 @@
     refs.scroll.addEventListener('change', () => {
       state.autoscroll = refs.scroll.checked;
       writeSetting(LS.scroll, state.autoscroll);
+    });
+    refs.roman.addEventListener('change', () => {
+      state.romanize = refs.roman.checked;
+      writeSetting(LS.romanize, state.romanize);
+      renderLyrics();
     });
     refs.accent.addEventListener('input', () => {
       state.accent = refs.accent.value;
@@ -290,6 +303,48 @@
     setTab(state.tab, true);
     setOpen(state.open, true);
     updateTrackLabel();
+  }
+
+  function populateLanguages(list) {
+    if (!refs.lang) { return; }
+    refs.lang.textContent = '';
+    const seen = new Set();
+    for (const entry of list) {
+      const code = Array.isArray(entry) ? entry[0] : entry.code;
+      const label = Array.isArray(entry) ? entry[1] : entry.name;
+      if (!code || seen.has(code)) { continue; }
+      seen.add(code);
+      const option = document.createElement('option');
+      option.value = code;
+      option.textContent = label;
+      refs.lang.appendChild(option);
+    }
+    if (seen.has(state.lang)) { refs.lang.value = state.lang; }
+  }
+
+  async function refreshLanguages() {
+    const cached = readSetting(LS.languages, null);
+    let list = null;
+    if (cached && cached.list && cached.list.length > 40 && (Date.now() - cached.at) < 604800000) {
+      list = cached.list;
+    }
+    else {
+      try {
+        const data = await fetchJson('https://translate.googleapis.com/translate_a/l?client=gtx&alpha=true&hl=en');
+        const map = data.tl || {};
+        list = Object.keys(map)
+          .map((code) => ({ code, name: map[code] }))
+          .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        if (list.length > 40) {
+          writeSetting(LS.languages, { at: Date.now(), list });
+        }
+        else { list = null; }
+      }
+      catch (error) { list = null; }
+    }
+    if (!list || !refs.lang) { return; }
+    state.languages = list;
+    populateLanguages(list);
   }
 
   function themeById(id) {
@@ -452,6 +507,7 @@
     state.lines = [];
     state.active = -1;
     state.translated = {};
+    state.romanized = {};
     state.translationState = 'idle';
     const cached = lyricCache.get(track.key);
     if (cached) {
@@ -554,6 +610,13 @@
       original.className = 'sum-line-text';
       original.textContent = line.text;
       row.appendChild(original);
+      const romanization = state.romanized[line.text];
+      if (state.romanize && romanization && state.mode !== 'translated') {
+        const roman = document.createElement('div');
+        roman.className = 'sum-line-roman';
+        roman.textContent = romanization;
+        row.appendChild(roman);
+      }
       const translation = state.translated[line.text];
       if (translation && state.mode !== 'off') {
         const translated = document.createElement('div');
@@ -584,12 +647,18 @@
   }
 
   async function translateText(text, lang) {
-    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' + encodeURIComponent(lang) + '&dt=t&q=' + encodeURIComponent(text);
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' + encodeURIComponent(lang) +
+      '&dt=t&dt=rm&q=' + encodeURIComponent(text);
     const response = await fetch(url);
     if (!response.ok) { throw new Error('HTTP ' + response.status); }
     const data = await response.json();
-    return (data[0] || []).map((part) => part[0]).join('');
+    const segments = data[0] || [];
+    const translated = segments.filter((part) => part && part[0]).map((part) => part[0]).join('');
+    const romanized = segments.filter((part) => part && !part[0] && part[3]).map((part) => part[3]).join('');
+    return { text: translated, romanization: romanized };
   }
+
+  window.__SUM_TRANSLATE__ = (text, lang) => translateText(text, lang || state.lang);
 
   async function translateLines() {
     if (!state.lines.length || state.mode === 'off') { return; }
@@ -603,16 +672,20 @@
     for (const line of targets) {
       if (requestId !== state.requestId) { return; }
       const cacheKey = lang + '|' + line.text;
-      if (store[cacheKey]) {
-        state.translated[line.text] = store[cacheKey];
+      const cached = store[cacheKey];
+      if (cached) {
+        const entry = typeof cached === 'string' ? { text: cached, romanization: '' } : cached;
+        state.translated[line.text] = entry.text;
+        if (entry.romanization) { state.romanized[line.text] = entry.romanization; }
         changed = true;
         continue;
       }
       try {
-        const value = await translateText(line.text, lang);
-        if (value && value.trim() && value.trim().toLowerCase() !== line.text.trim().toLowerCase()) {
-          state.translated[line.text] = value;
-          store[cacheKey] = value;
+        const result = await translateText(line.text, lang);
+        if (result.text && result.text.trim() && result.text.trim().toLowerCase() !== line.text.trim().toLowerCase()) {
+          state.translated[line.text] = result.text;
+          if (result.romanization) { state.romanized[line.text] = result.romanization; }
+          store[cacheKey] = { text: result.text, romanization: result.romanization || '' };
           changed = true;
           rendered++;
           if (rendered % 4 === 0) { renderLyrics(); }
@@ -895,6 +968,13 @@
     installSheet('custom', sanitizeCss(readSetting(LS.css, '')));
     applyTheme();
     syncTrack();
+  };
+  window.__SUM__ = {
+    version: VERSION,
+    state,
+    translate: window.__SUM_TRANSLATE__,
+    render: renderLyrics,
+    refresh: window.__SUM_REFRESH__
   };
 
   return 'ok';
