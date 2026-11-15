@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.12.4';
+  const VERSION = '3.13.1';
   const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
   const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
   const FACT_ORDER = ['Birth name', 'Born', 'Died', 'Birthplace', 'Origin', 'Country', 'Type', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
@@ -582,6 +582,7 @@
 
     applyTheme();
     applyLayout();
+    syncPanelOffset();
     applyCustomCss(readSetting(LS.css, ''));
     applyCustomHtml(readSetting(LS.html, ''));
     setTab(state.tab, true);
@@ -811,6 +812,22 @@
         button.classList.toggle('is-active', button.dataset.sumSide === state.side);
       });
     }
+  }
+
+  function syncPanelOffset() {
+    if (!refs.panel) { return; }
+    let offset = 8;
+    if (state.side === 'right') {
+      const sidebar = document.getElementById('Desktop_PanelContainer_Id');
+      if (sidebar) {
+        const rect = sidebar.getBoundingClientRect();
+        const dockedRight = rect.width > 120 && rect.right >= window.innerWidth - 48;
+        if (dockedRight) {
+          offset = Math.min(Math.round(rect.width) + 12, Math.max(8, Math.round(window.innerWidth * 0.4)));
+        }
+      }
+    }
+    refs.panel.style.setProperty('--sum-right-offset', offset + 'px');
   }
 
   function bindResize() {
@@ -2024,6 +2041,7 @@
     try {
       syncTrack();
       ensurePlayerButton();
+      syncPanelOffset();
       decorateAllMenus();
       if (state.open && state.tab === 'lyrics' && state.lines.length) {
         updateActive(false);

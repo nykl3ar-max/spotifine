@@ -95,6 +95,41 @@ html[data-sum-theme] progress {
   accent-color: var(--sum-accent, #1ed760);
 }
 
+/* Layout wrappers that Spotify paints black behind the player and right sidebar */
+html[data-sum-theme] #main,
+html[data-sum-theme] [data-testid="root"],
+html[data-sum-theme] [data-testid="root"] > div,
+html[data-sum-theme] [data-testid="root"] > div > div {
+  background-color: var(--sum-bg-base, #121212) !important;
+}
+
+/* Cards previously stayed transparent, so the palette barely showed */
+html[data-sum-theme] [data-encore-id="card"] {
+  background-color: var(--sum-bg-elevated, #1f1f1f) !important;
+}
+
+html[data-sum-theme] [data-testid="tracklist-row"]:hover {
+  background-color: var(--sum-bg-tinted-highlight, #242424) !important;
+}
+
+html[data-sum-theme] [data-testid="progress-bar-background"] {
+  background-color: color-mix(in srgb, var(--sum-text, #ffffff) 22%, transparent) !important;
+}
+
+html[data-sum-theme] [data-testid="progress-bar-background"] > div > div,
+html[data-sum-theme] [data-testid="progress-bar-handle"] {
+  background-color: var(--sum-accent, #1ed760) !important;
+}
+
+html[data-sum-theme] [data-testid="play-button"] {
+  background-color: var(--sum-accent, #1ed760) !important;
+  color: #000 !important;
+}
+
+html[data-sum-theme] [data-testid="play-button"] svg {
+  fill: #000 !important;
+}
+
 #sum-custom-html {
   position: fixed;
   left: 16px;
@@ -128,10 +163,10 @@ html[data-sum-theme] progress {
 #sum-panel {
   position: fixed;
   top: 72px;
-  right: 8px;
+  right: var(--sum-right-offset, 8px);
   bottom: 88px;
   width: var(--sum-width, 372px);
-  max-width: calc(100vw - 16px);
+  max-width: calc(100vw - var(--sum-right-offset, 8px) - 8px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -150,6 +185,7 @@ html[data-sum-theme] progress {
 #sum-panel.is-left {
   right: auto;
   left: 8px;
+  max-width: calc(100vw - 16px);
   transform: translateX(-12px);
 }
 

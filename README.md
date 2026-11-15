@@ -22,7 +22,7 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 | **Automatic translation** | Translates the playing lyrics into 249 languages, original and translation side by side, per-line cache |
 | **Pronunciation** | Romanised pronunciation for non-Latin lyrics (romaji, romaja, pinyin and more), shown under each line |
 | **Artist panel** | Verified biography, a scrollable photo gallery (arrows, counter and thumbnails), birth details, country, genres, profession, label and verified links with platform icons |
-| **Themes** | Fourteen themes plus a live custom palette (base, surface, text and accent), with Solid, Glass and OLED surface modes applied across the client, including top bar, cards, menus, dialogs, tooltips, popovers, scrollbars and selections |
+| **Themes** | Fourteen themes plus a live custom palette (base, surface, text and accent), with Solid, Glass and OLED surface modes applied across the client: layout wrappers, cards, track rows, top bar, player, menus, dialogs, tooltips, popovers, scrollbars, selection, progress bar and play buttons |
 | **Custom CSS and HTML** | Restyle the whole client and inject your own markup from the panel; CSS imports/remote URLs, scripts, iframes and inline handlers are stripped |
 | **Zero footprint on disk** | Spotify's files are never patched. The interface is injected into the running app and disappears on restart |
 
@@ -81,7 +81,7 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
 | **Artist** tab | Spotify-style header with gallery, name, artist badge and country/active/genres line; biography, every detail row shown (Unknown when missing) and verified links with logos. Identity is resolved through MusicBrainz first and cross-checked against Wikidata, so same-name politicians and other unrelated entries are rejected |
 | **Style** tab | Fourteen themes, Solid/Glass/OLED surface modes, live base/surface/text/accent colour pickers, panel width/side, glass opacity/blur, layout reset, theme reset, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
-| **Panel layout** | Width from 360–620 px (slider or drag the panel edge), docked left or right, plus adjustable glass opacity and blur with a one-click layout reset |
+| **Panel layout** | Width from 360–620 px (slider or drag the panel edge), docked left or right, plus adjustable glass opacity and blur with a one-click layout reset. On the right it automatically stops left of Spotify's Now Playing sidebar instead of covering it |
 | **Updates** | Checks GitHub for a newer release and shows an update badge; clicking it copies the install command |
 | **Ctrl+Shift+U** | Open or close the panel |
 | **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
@@ -103,7 +103,7 @@ The **Surface** control works with any palette:
 - **Glass** — a themed gradient backdrop with translucent, blurred main view, sidebar, player, top bar, card, menu, dialog, popover and panel surfaces. Opacity (20–90 %) and blur (0–40 px) are adjustable in the Style tab.
 - **OLED** — forces every themed surface to `#000000` with no blur, for true-black displays.
 
-The surface mode and palette are applied to Spotify's own containers, top bar, cards, menus, dialogs, tooltips, popovers, scrollbars, selection colours and the panel itself — not just the mod's panel.
+The surface mode and palette are applied to Spotify's own layout wrappers, containers, top bar, cards, track rows, player, menus, dialogs, tooltips, popovers, scrollbars, selection colours, progress bar, play controls and the panel itself — not just the mod's panel.
 
 Theme values are also forced onto Spotify's own theme wrappers, so the base surface, sidebars, cards, player, menus, dialogs and listboxes follow the selected theme instead of staying on Spotify's defaults. Artwork-derived header gradients are left intact.
 
