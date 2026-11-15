@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.9.2';
+  const VERSION = '3.10.0';
   const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
   const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
   const FACT_ORDER = ['Birth name', 'Born', 'Birthplace', 'Origin', 'Country', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
@@ -31,8 +31,14 @@
     scroll: 'sum.autoscroll',
     romanize: 'sum.romanize',
     languages: 'sum.languages.v1',
-    trans: 'sum.translations.v2'
+    trans: 'sum.translations.v2',
+    width: 'sum.width',
+    side: 'sum.side',
+    glassAlpha: 'sum.glassAlpha',
+    glassBlur: 'sum.glassBlur'
   };
+
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
   const readSetting = (key, fallback) => {
     try {
@@ -123,6 +129,10 @@
     accent: readSetting(LS.accent, ''),
     effect: readSetting(LS.effect, ''),
     custom: readSetting(LS.custom, { base: '#121212', elevated: '#1f1f1f', text: '#ffffff', accent: '#1ed760' }),
+    width: clamp(Number(readSetting(LS.width, 372)) || 372, 360, 620),
+    side: readSetting(LS.side, 'right') === 'left' ? 'left' : 'right',
+    glassAlpha: clamp(Number(readSetting(LS.glassAlpha, 55)) || 55, 20, 90),
+    glassBlur: clamp(Number(readSetting(LS.glassBlur, 26)) || 0, 0, 40),
     lang: readSetting(LS.lang, 'en'),
     mode: readSetting(LS.mode, 'both'),
     size: Number(readSetting(LS.size, 15)) || 15,
@@ -216,6 +226,7 @@
 
   const html = `
     <aside id="sum-panel" aria-label="Spotifine panel">
+      <div id="sum-resize" class="sum-resize" title="Drag to resize" aria-hidden="true"></div>
       <header class="sum-header">
         <div class="sum-tabs">
           <button type="button" class="sum-tab" data-sum-tab="lyrics">Lyrics</button>
@@ -251,6 +262,30 @@
             <button type="button" class="sum-surface" data-sum-effect="solid">Solid</button>
             <button type="button" class="sum-surface" data-sum-effect="glass">Glass</button>
             <button type="button" class="sum-surface" data-sum-effect="oled">OLED</button>
+          </div>
+          <div class="sum-label">Panel</div>
+          <div class="sum-row">
+            <span class="sum-label">Width</span>
+            <span class="sum-range-field"><input id="sum-width" type="range" min="360" max="620" step="4" class="sum-range" aria-label="Panel width"><code id="sum-width-value" class="sum-hex">372px</code></span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-label">Position</span>
+            <span class="sum-segment" id="sum-side">
+              <button type="button" class="sum-segment-btn" data-sum-side="right">Right</button>
+              <button type="button" class="sum-segment-btn" data-sum-side="left">Left</button>
+            </span>
+          </div>
+          <div class="sum-label">Glass</div>
+          <div class="sum-row">
+            <span class="sum-label">Opacity</span>
+            <span class="sum-range-field"><input id="sum-glass-alpha" type="range" min="20" max="90" step="1" class="sum-range" aria-label="Glass opacity"><code id="sum-glass-alpha-value" class="sum-hex">55%</code></span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-label">Blur</span>
+            <span class="sum-range-field"><input id="sum-glass-blur" type="range" min="0" max="40" step="1" class="sum-range" aria-label="Glass blur"><code id="sum-glass-blur-value" class="sum-hex">26px</code></span>
+          </div>
+          <div class="sum-row sum-actions">
+            <button type="button" id="sum-layout-reset" class="sum-btn sum-ghost">Reset layout</button>
           </div>
           <div class="sum-row">
             <span class="sum-label">Accent</span>
@@ -342,6 +377,15 @@
       artist: root.querySelector('#sum-artist'),
       themes: root.querySelector('#sum-themes'),
       surfaces: root.querySelector('#sum-surfaces'),
+      resize: root.querySelector('#sum-resize'),
+      width: root.querySelector('#sum-width'),
+      widthValue: root.querySelector('#sum-width-value'),
+      side: root.querySelector('#sum-side'),
+      glassAlpha: root.querySelector('#sum-glass-alpha'),
+      glassAlphaValue: root.querySelector('#sum-glass-alpha-value'),
+      glassBlur: root.querySelector('#sum-glass-blur'),
+      glassBlurValue: root.querySelector('#sum-glass-blur-value'),
+      layoutReset: root.querySelector('#sum-layout-reset'),
       accent: root.querySelector('#sum-accent'),
       base: root.querySelector('#sum-base'),
       baseHex: root.querySelector('#sum-base-hex'),
@@ -429,6 +473,50 @@
         });
       });
     }
+    if (refs.width) {
+      refs.width.addEventListener('input', () => {
+        state.width = clamp(Number(refs.width.value) || 372, 360, 620);
+        writeSetting(LS.width, state.width);
+        applyLayout();
+      });
+    }
+    if (refs.glassAlpha) {
+      refs.glassAlpha.addEventListener('input', () => {
+        state.glassAlpha = clamp(Number(refs.glassAlpha.value) || 55, 20, 90);
+        writeSetting(LS.glassAlpha, state.glassAlpha);
+        applyLayout();
+      });
+    }
+    if (refs.glassBlur) {
+      refs.glassBlur.addEventListener('input', () => {
+        state.glassBlur = clamp(Number(refs.glassBlur.value) || 0, 0, 40);
+        writeSetting(LS.glassBlur, state.glassBlur);
+        applyLayout();
+      });
+    }
+    if (refs.side) {
+      refs.side.querySelectorAll('[data-sum-side]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.side = button.dataset.sumSide === 'left' ? 'left' : 'right';
+          writeSetting(LS.side, state.side);
+          applyLayout();
+        });
+      });
+    }
+    if (refs.layoutReset) {
+      refs.layoutReset.addEventListener('click', () => {
+        state.width = 372;
+        state.side = 'right';
+        state.glassAlpha = 55;
+        state.glassBlur = 26;
+        writeSetting(LS.width, state.width);
+        writeSetting(LS.side, state.side);
+        writeSetting(LS.glassAlpha, state.glassAlpha);
+        writeSetting(LS.glassBlur, state.glassBlur);
+        applyLayout();
+      });
+    }
+    bindResize();
     refs.themeReset.addEventListener('click', () => {
       const theme = THEMES[0];
       state.theme = theme.id;
@@ -493,6 +581,7 @@
     window.__SUM_UPDATE_TIMER__ = setInterval(checkForUpdate, 21600000);
 
     applyTheme();
+    applyLayout();
     applyCustomCss(readSetting(LS.css, ''));
     applyCustomHtml(readSetting(LS.html, ''));
     setTab(state.tab, true);
@@ -695,6 +784,56 @@
     write(refs.surface, refs.surfaceHex, vars['--background-elevated-base']);
     write(refs.text, refs.textHex, vars['--text-base']);
     if (refs.accent) { refs.accent.value = /^#[0-9a-f]{6}$/i.test(accent) ? accent : '#1ed760'; }
+  }
+
+  function applyLayout() {
+    const root = document.documentElement;
+    const width = clamp(Number(state.width) || 372, 360, 620);
+    const alpha = clamp(Number(state.glassAlpha) || 55, 20, 90);
+    const blur = clamp(Number(state.glassBlur) || 0, 0, 40);
+    state.width = width;
+    state.glassAlpha = alpha;
+    state.glassBlur = blur;
+    root.style.setProperty('--sum-width', width + 'px');
+    root.style.setProperty('--sum-glass-alpha', alpha + '%');
+    root.style.setProperty('--sum-glass-blur', blur + 'px');
+    root.style.setProperty('--sum-glass-menu', Math.min(92, alpha + 17) + '%');
+    root.style.setProperty('--sum-glass-card', Math.max(14, alpha - 10) + '%');
+    if (refs.panel) { refs.panel.classList.toggle('is-left', state.side === 'left'); }
+    if (refs.width) { refs.width.value = String(width); }
+    if (refs.widthValue) { refs.widthValue.textContent = width + 'px'; }
+    if (refs.glassAlpha) { refs.glassAlpha.value = String(alpha); }
+    if (refs.glassAlphaValue) { refs.glassAlphaValue.textContent = alpha + '%'; }
+    if (refs.glassBlur) { refs.glassBlur.value = String(blur); }
+    if (refs.glassBlurValue) { refs.glassBlurValue.textContent = blur + 'px'; }
+    if (refs.side) {
+      refs.side.querySelectorAll('[data-sum-side]').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.sumSide === state.side);
+      });
+    }
+  }
+
+  function bindResize() {
+    if (!refs.resize || !refs.panel) { return; }
+    let drag = null;
+    const finish = () => {
+      if (!drag) { return; }
+      drag = null;
+      writeSetting(LS.width, state.width);
+    };
+    refs.resize.addEventListener('pointerdown', (event) => {
+      drag = { x: event.clientX, width: refs.panel.getBoundingClientRect().width, side: state.side };
+      try { refs.resize.setPointerCapture(event.pointerId); } catch (error) { }
+      event.preventDefault();
+    });
+    refs.resize.addEventListener('pointermove', (event) => {
+      if (!drag) { return; }
+      const delta = drag.side === 'left' ? event.clientX - drag.x : drag.x - event.clientX;
+      state.width = clamp(Math.round(drag.width + delta), 360, 620);
+      applyLayout();
+    });
+    refs.resize.addEventListener('pointerup', finish);
+    refs.resize.addEventListener('pointercancel', finish);
   }
 
   function applyTheme() {

@@ -1,5 +1,13 @@
 /* Spotifine — panel styled to match the Spotify desktop client */
 
+:root {
+  --sum-width: 372px;
+  --sum-glass-alpha: 55%;
+  --sum-glass-blur: 26px;
+  --sum-glass-menu: 72%;
+  --sum-glass-card: 45%;
+}
+
 /* Apply the selected theme across Spotify's own theme wrappers, which otherwise
    redeclare their background and text variables. */
 html[data-sum-theme] {
@@ -49,6 +57,44 @@ html[data-sum-theme] [data-testid="search-input"] {
   background-color: var(--sum-bg-elevated, #1f1f1f) !important;
 }
 
+/* Cover the remaining client chrome, not just the main view */
+html[data-sum-theme] [data-testid="top-bar"],
+html[data-sum-theme] [data-testid="topbar"],
+html[data-sum-theme] [data-testid="topbar-content-wrapper"],
+html[data-sum-theme] [data-testid="now-playing-view"],
+html[data-sum-theme] [data-testid="queue"],
+html[data-sum-theme] [data-testid="right-sidebar"],
+html[data-sum-theme] [data-testid="nav-bar"],
+html[data-sum-theme] [data-testid="left-sidebar"] {
+  background-color: var(--sum-bg-base, #121212) !important;
+  color: var(--sum-text, #fff);
+}
+
+html[data-sum-theme] [role="tooltip"],
+html[data-sum-theme] [data-testid="tooltip"] {
+  background-color: var(--sum-bg-elevated-highlight, #2a2a2a) !important;
+  color: var(--sum-text, #fff) !important;
+}
+
+html[data-sum-theme] [data-testid="context-menu"],
+html[data-sum-theme] [data-testid="popover"] {
+  background-color: var(--sum-bg-elevated, #1f1f1f) !important;
+}
+
+html[data-sum-theme] ::selection {
+  background-color: var(--sum-accent, #1ed760);
+  color: #000;
+}
+
+html[data-sum-theme] * {
+  scrollbar-color: color-mix(in srgb, var(--sum-text-subdued, #b3b3b3) 55%, transparent) transparent;
+}
+
+html[data-sum-theme] input[type="range"],
+html[data-sum-theme] progress {
+  accent-color: var(--sum-accent, #1ed760);
+}
+
 #sum-custom-html {
   position: fixed;
   left: 16px;
@@ -84,7 +130,7 @@ html[data-sum-theme] [data-testid="search-input"] {
   top: 72px;
   right: 8px;
   bottom: 88px;
-  width: 372px;
+  width: var(--sum-width, 372px);
   max-width: calc(100vw - 16px);
   display: flex;
   flex-direction: column;
@@ -101,10 +147,36 @@ html[data-sum-theme] [data-testid="search-input"] {
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
 }
 
-#sum-panel.is-open {
+#sum-panel.is-left {
+  right: auto;
+  left: 8px;
+  transform: translateX(-12px);
+}
+
+#sum-panel.is-open,
+#sum-panel.is-left.is-open {
   opacity: 1;
   visibility: visible;
   transform: none;
+}
+
+.sum-resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+#sum-panel.is-left .sum-resize {
+  right: 0;
+  left: auto;
+}
+
+.sum-resize:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .sum-header {
@@ -772,6 +844,54 @@ html[data-sum-theme] [data-testid="search-input"] {
   margin: 4px 0 8px;
 }
 
+.sum-range-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sum-range {
+  width: 118px;
+  height: 16px;
+  accent-color: var(--essential-bright-accent, #1ed760);
+  cursor: pointer;
+}
+
+.sum-range-field .sum-hex {
+  min-width: 42px;
+  text-align: right;
+}
+
+.sum-segment {
+  display: inline-flex;
+  gap: 4px;
+  padding: 2px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sum-segment-btn {
+  height: 26px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-subdued, #b3b3b3);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sum-segment-btn:hover {
+  color: var(--text-base, #fff);
+}
+
+.sum-segment-btn.is-active {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text-base, #fff);
+}
+
 .sum-surface {
   flex: 1;
   height: 30px;
@@ -835,22 +955,31 @@ html[data-sum-effect="glass"] #main-view,
 html[data-sum-effect="glass"] #Desktop_PanelContainer_Id,
 html[data-sum-effect="glass"] #Desktop_LeftSidebar_Id,
 html[data-sum-effect="glass"] [data-testid="global-nav-bar"],
-html[data-sum-effect="glass"] [data-testid="now-playing-bar"] {
-  background-color: color-mix(in srgb, var(--sum-bg-base) 55%, transparent) !important;
-  backdrop-filter: blur(26px) saturate(1.3);
+html[data-sum-effect="glass"] [data-testid="now-playing-bar"],
+html[data-sum-effect="glass"] [data-testid="top-bar"],
+html[data-sum-effect="glass"] [data-testid="topbar"] {
+  background-color: color-mix(in srgb, var(--sum-bg-base) var(--sum-glass-alpha), transparent) !important;
+  backdrop-filter: blur(var(--sum-glass-blur)) saturate(1.3);
 }
 
 html[data-sum-effect="glass"] [data-encore-id="card"] {
-  background-color: color-mix(in srgb, var(--sum-bg-elevated) 45%, transparent) !important;
-  backdrop-filter: blur(12px);
+  background-color: color-mix(in srgb, var(--sum-bg-elevated) var(--sum-glass-card), transparent) !important;
+  backdrop-filter: blur(calc(var(--sum-glass-blur) * 0.46));
   border-radius: 8px;
 }
 
 html[data-sum-effect="glass"] [role="menu"],
 html[data-sum-effect="glass"] [role="dialog"],
-html[data-sum-effect="glass"] [role="listbox"] {
-  background-color: color-mix(in srgb, var(--sum-bg-elevated) 72%, transparent) !important;
-  backdrop-filter: blur(28px) saturate(1.3);
+html[data-sum-effect="glass"] [role="listbox"],
+html[data-sum-effect="glass"] [data-testid="context-menu"],
+html[data-sum-effect="glass"] [data-testid="popover"] {
+  background-color: color-mix(in srgb, var(--sum-bg-elevated) var(--sum-glass-menu), transparent) !important;
+  backdrop-filter: blur(calc(var(--sum-glass-blur) + 2px)) saturate(1.3);
+}
+
+html[data-sum-effect="glass"] #sum-panel {
+  background-color: color-mix(in srgb, var(--sum-bg-base) var(--sum-glass-menu), transparent) !important;
+  backdrop-filter: blur(var(--sum-glass-blur)) saturate(1.3);
 }
 
 @media (prefers-reduced-motion: reduce) {
