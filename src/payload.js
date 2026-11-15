@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.4.0';
+  const VERSION = '3.5.0';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -21,6 +21,7 @@
     size: 'sum.size',
     css: 'sum.customCss',
     html: 'sum.customHtml',
+    custom: 'sum.customPalette',
     open: 'sum.open',
     tab: 'sum.tab',
     scroll: 'sum.autoscroll',
@@ -81,6 +82,10 @@
     {
       id: 'aurora', name: 'Aurora', accent: '#34d399',
       vars: { '--background-base': '#06110f', '--background-elevated-base': '#0d201c', '--background-elevated-highlight': '#132b25', '--background-tinted-base': '#0a1916', '--background-tinted-highlight': '#10241f', '--text-base': '#ecfdf5', '--text-subdued': '#93b8ab', '--essential-base': '#34d399', '--essential-bright-accent': '#6ee7b7' }
+    },
+    {
+      id: 'custom', name: 'Custom', accent: '#1ed760',
+      vars: { '--background-base': '#121212', '--background-elevated-base': '#1f1f1f', '--background-elevated-highlight': '#2a2a2a', '--background-tinted-base': '#181818', '--background-tinted-highlight': '#242424', '--text-base': '#ffffff', '--text-subdued': '#b3b3b3', '--essential-base': '#1ed760', '--essential-bright-accent': '#1ed760' }
     }
   ];
 
@@ -88,6 +93,7 @@
     tab: readSetting(LS.tab, 'lyrics'),
     theme: readSetting(LS.theme, 'spotify'),
     accent: readSetting(LS.accent, ''),
+    custom: readSetting(LS.custom, { base: '#121212', elevated: '#1f1f1f', text: '#ffffff', accent: '#1ed760' }),
     lang: readSetting(LS.lang, 'en'),
     mode: readSetting(LS.mode, 'both'),
     size: Number(readSetting(LS.size, 15)) || 15,
@@ -213,6 +219,22 @@
             <span class="sum-label">Accent</span>
             <input id="sum-accent" type="color" class="sum-color" aria-label="Accent colour">
           </div>
+          <div class="sum-label">Custom colours</div>
+          <div class="sum-row">
+            <span class="sum-label">Base</span>
+            <span class="sum-color-field"><input id="sum-base" type="color" class="sum-color" aria-label="Base colour"><code id="sum-base-hex" class="sum-hex"></code></span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-label">Surface</span>
+            <span class="sum-color-field"><input id="sum-surface" type="color" class="sum-color" aria-label="Surface colour"><code id="sum-surface-hex" class="sum-hex"></code></span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-label">Text</span>
+            <span class="sum-color-field"><input id="sum-text" type="color" class="sum-color" aria-label="Text colour"><code id="sum-text-hex" class="sum-hex"></code></span>
+          </div>
+          <div class="sum-row sum-actions">
+            <button type="button" id="sum-theme-reset" class="sum-btn sum-ghost">Reset theme</button>
+          </div>
           <div class="sum-row">
             <span class="sum-label">Auto-scroll lyrics</span>
             <input id="sum-scroll" type="checkbox" class="sum-check">
@@ -273,6 +295,13 @@
       artist: root.querySelector('#sum-artist'),
       themes: root.querySelector('#sum-themes'),
       accent: root.querySelector('#sum-accent'),
+      base: root.querySelector('#sum-base'),
+      baseHex: root.querySelector('#sum-base-hex'),
+      surface: root.querySelector('#sum-surface'),
+      surfaceHex: root.querySelector('#sum-surface-hex'),
+      text: root.querySelector('#sum-text'),
+      textHex: root.querySelector('#sum-text-hex'),
+      themeReset: root.querySelector('#sum-theme-reset'),
       scroll: root.querySelector('#sum-scroll'),
       roman: root.querySelector('#sum-roman'),
       css: root.querySelector('#sum-css'),
@@ -340,6 +369,42 @@
       writeSetting(LS.accent, state.accent);
       applyTheme();
     });
+    refs.themeReset.addEventListener('click', () => {
+      const theme = THEMES[0];
+      state.theme = theme.id;
+      state.accent = '';
+      state.custom = {
+        base: theme.vars['--background-base'],
+        elevated: theme.vars['--background-elevated-base'],
+        text: theme.vars['--text-base'],
+        accent: theme.accent
+      };
+      writeSetting(LS.theme, state.theme);
+      writeSetting(LS.accent, '');
+      writeSetting(LS.custom, state.custom);
+      applyTheme();
+    });
+    const bindPalette = (input, key) => {
+      input.addEventListener('input', () => {
+        if (state.theme !== 'custom') {
+          const current = themeById(state.theme);
+          state.custom = {
+            base: current.vars['--background-base'],
+            elevated: current.vars['--background-elevated-base'],
+            text: current.vars['--text-base'],
+            accent: state.accent || current.accent
+          };
+          state.theme = 'custom';
+          writeSetting(LS.theme, state.theme);
+        }
+        state.custom[key] = input.value;
+        writeSetting(LS.custom, state.custom);
+        applyTheme();
+      });
+    };
+    bindPalette(refs.base, 'base');
+    bindPalette(refs.surface, 'elevated');
+    bindPalette(refs.text, 'text');
     refs.cssApply.addEventListener('click', () => {
       writeSetting(LS.css, refs.css.value);
       applyCustomCss(refs.css.value);
@@ -519,24 +584,71 @@
     return THEMES.find((theme) => theme.id === id) || THEMES[0];
   }
 
+  function parseHexColor(value) {
+    const match = /^#?([0-9a-f]{6})$/i.exec(String(value || '').trim());
+    if (!match) { return null; }
+    return [0, 2, 4].map((index) => parseInt(match[1].slice(index, index + 2), 16));
+  }
+
+  function toHexColor(rgb) {
+    return '#' + rgb.map((value) => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0')).join('');
+  }
+
+  function mixColor(from, to, amount) {
+    const a = parseHexColor(from) || [18, 18, 18];
+    const b = parseHexColor(to) || [255, 255, 255];
+    return toHexColor(a.map((value, index) => value + (b[index] - value) * amount));
+  }
+
+  function customVars(palette) {
+    const base = palette.base || '#121212';
+    const elevated = palette.elevated || '#1f1f1f';
+    const text = palette.text || '#ffffff';
+    const accent = palette.accent || '#1ed760';
+    return {
+      '--background-base': base,
+      '--background-elevated-base': elevated,
+      '--background-elevated-highlight': mixColor(elevated, '#ffffff', 0.08),
+      '--background-tinted-base': mixColor(base, elevated, 0.5),
+      '--background-tinted-highlight': mixColor(elevated, '#ffffff', 0.14),
+      '--text-base': text,
+      '--text-subdued': mixColor(text, base, 0.42),
+      '--essential-base': accent,
+      '--essential-bright-accent': accent
+    };
+  }
+
+  function syncThemeFields(vars, accent) {
+    const write = (input, hexLabel, value) => {
+      if (input) { input.value = /^#[0-9a-f]{6}$/i.test(value) ? value : '#000000'; }
+      if (hexLabel) { hexLabel.textContent = String(value || '').toUpperCase(); }
+    };
+    write(refs.base, refs.baseHex, vars['--background-base']);
+    write(refs.surface, refs.surfaceHex, vars['--background-elevated-base']);
+    write(refs.text, refs.textHex, vars['--text-base']);
+    if (refs.accent) { refs.accent.value = /^#[0-9a-f]{6}$/i.test(accent) ? accent : '#1ed760'; }
+  }
+
   function applyTheme() {
     const theme = themeById(state.theme);
+    const vars = theme.id === 'custom' ? customVars(state.custom) : theme.vars;
     const accent = state.accent || theme.accent;
     const root = document.documentElement;
-    for (const [name, value] of Object.entries(theme.vars)) {
+    for (const [name, value] of Object.entries(vars)) {
       root.style.setProperty(name, value);
     }
     root.style.setProperty('--essential-base', accent);
     root.style.setProperty('--essential-bright-accent', accent);
     root.style.setProperty('--sum-accent', accent);
-    root.style.setProperty('--sum-bg-base', theme.vars['--background-base']);
-    root.style.setProperty('--sum-bg-elevated', theme.vars['--background-elevated-base']);
-    root.style.setProperty('--sum-bg-elevated-highlight', theme.vars['--background-elevated-highlight']);
-    root.style.setProperty('--sum-bg-tinted', theme.vars['--background-tinted-base']);
-    root.style.setProperty('--sum-bg-tinted-highlight', theme.vars['--background-tinted-highlight']);
-    root.style.setProperty('--sum-text', theme.vars['--text-base']);
-    root.style.setProperty('--sum-text-subdued', theme.vars['--text-subdued']);
+    root.style.setProperty('--sum-bg-base', vars['--background-base']);
+    root.style.setProperty('--sum-bg-elevated', vars['--background-elevated-base']);
+    root.style.setProperty('--sum-bg-elevated-highlight', vars['--background-elevated-highlight']);
+    root.style.setProperty('--sum-bg-tinted', vars['--background-tinted-base']);
+    root.style.setProperty('--sum-bg-tinted-highlight', vars['--background-tinted-highlight']);
+    root.style.setProperty('--sum-text', vars['--text-base']);
+    root.style.setProperty('--sum-text-subdued', vars['--text-subdued']);
     root.setAttribute('data-sum-theme', theme.id);
+    syncThemeFields(vars, accent);
     if (refs.themes) {
       refs.themes.querySelectorAll('.sum-theme').forEach((button) => {
         button.classList.toggle('is-active', button.dataset.sumTheme === theme.id);

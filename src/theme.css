@@ -403,6 +403,19 @@ html[data-sum-theme] [data-testid="search-input"] {
   margin: 0;
 }
 
+.sum-color-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sum-hex {
+  color: var(--text-subdued, #b3b3b3);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
 .sum-color {
   width: 44px;
   height: 26px;

@@ -22,7 +22,7 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 | **Automatic translation** | Translates the playing lyrics into 249 languages, original and translation side by side, per-line cache |
 | **Pronunciation** | Romanised pronunciation for non-Latin lyrics (romaji, romaja, pinyin and more), shown under each line |
 | **Artist panel** | Verified biography, portrait, birth details, country, genres, profession, label and verified links from Wikipedia and Wikidata |
-| **Themes** | Seven colour themes plus a custom accent, applied to the entire Spotify interface instantly |
+| **Themes** | Eight colour themes plus a live custom palette (base, surface, text and accent), applied to the entire Spotify interface instantly |
 | **Custom CSS and HTML** | Restyle the whole client and inject your own markup from the panel; CSS imports/remote URLs, scripts, iframes and inline handlers are stripped |
 | **Zero footprint on disk** | Spotify's files are never patched. The interface is injected into the running app and disappears on restart |
 
@@ -80,7 +80,7 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | --- | --- |
 | **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
 | **Artist** tab | Portrait, biography, documented facts and verified links for the current artist |
-| **Style** tab | Seven themes, custom accent colour, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
+| **Style** tab | Eight themes, live base/surface/text/accent colour pickers, theme reset, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
 | **Ctrl+Shift+U** | Open or close the panel |
 | **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
 | **Spotify menus** | Adds an **Ultimate Mod settings** entry to the profile menu and to three-dot menus, opening the Style tab |
@@ -89,7 +89,9 @@ Settings, theme choice and translation cache are stored in Spotify's own local s
 
 ### Themes
 
-Spotify (the default: `#121212` surfaces, white text, `#1ed760` green), Midnight (violet), AMOLED (true black, mint), Neon (magenta), Ocean (cyan), Crimson (red) and Aurora (green). Theme colours are applied through Spotify's own CSS variables, so every surface — sidebar, cards, player, menus — changes together.
+Spotify (the default: `#121212` surfaces, white text, `#1ed760` green), Midnight (violet), AMOLED (true black, mint), Neon (magenta), Ocean (cyan), Crimson (red), Aurora (green) and Custom.
+
+Selecting any preset updates the whole client. Editing **Base**, **Surface** or **Text** switches to the Custom theme and applies live; the **Accent** picker recolours controls on any theme. Derived shades (tinted rows, elevated hovers, subdued text) are generated from those four colours, and **Reset theme** returns to Spotify. The palette is stored in Spotify's local storage and restored on restart.
 
 Theme values are also forced onto Spotify's own theme wrappers, so the base surface, sidebars, cards, player, menus, dialogs and listboxes follow the selected theme instead of staying on Spotify's defaults. Artwork-derived header gradients are left intact.
 
