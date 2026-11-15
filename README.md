@@ -22,7 +22,7 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 | **Automatic translation** | Translates the playing lyrics into 249 languages, original and translation side by side, per-line cache |
 | **Pronunciation** | Romanised pronunciation for non-Latin lyrics (romaji, romaja, pinyin and more), shown under each line |
 | **Artist panel** | Verified biography, a scrollable photo gallery (arrows, counter and thumbnails), birth details, country, genres, profession, label and verified links with platform icons |
-| **Themes** | Ten themes plus a live custom palette (base, surface, text and accent), with Solid, Glass and OLED surface modes applied across the client |
+| **Themes** | Fourteen themes plus a live custom palette (base, surface, text and accent), with Solid, Glass and OLED surface modes applied across the client |
 | **Custom CSS and HTML** | Restyle the whole client and inject your own markup from the panel; CSS imports/remote URLs, scripts, iframes and inline handlers are stripped |
 | **Zero footprint on disk** | Spotify's files are never patched. The interface is injected into the running app and disappears on restart |
 
@@ -79,8 +79,8 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | Control | What it does |
 | --- | --- |
 | **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
-| **Artist** tab | Photo gallery, biography, documented facts and verified links (with logos for Wikipedia, the official site, X, Instagram, Facebook, YouTube, TikTok and MusicBrainz) |
-| **Style** tab | Ten themes, Solid/Glass/OLED surface modes, live base/surface/text/accent colour pickers, theme reset, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
+| **Artist** tab | Photo gallery, biography, documented facts (birth details, origin, active years, genres, profession, instruments, members and label) and verified links with logos, including Spotify and Wikidata |
+| **Style** tab | Fourteen themes, Solid/Glass/OLED surface modes, live base/surface/text/accent colour pickers, theme reset, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
 | **Ctrl+Shift+U** | Open or close the panel |
 | **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
 | **Spotify menus** | Adds an **Spotifine settings** entry to the profile menu and to three-dot menus, opening the Style tab |
@@ -89,7 +89,7 @@ Settings, theme choice and translation cache are stored in Spotify's own local s
 
 ### Themes
 
-Spotify (the default: `#121212` surfaces, white text, `#1ed760` green), Midnight (violet), AMOLED (true black, mint), Neon (magenta), Ocean (cyan), Crimson (red), Aurora (green), OLED (pure black for OLED displays), Glass (translucent blur over a themed gradient) and Custom.
+Spotify (the default: `#121212` surfaces, white text, `#1ed760` green), Midnight (violet), AMOLED (true black, mint), Neon (magenta), Ocean (cyan), Crimson (red), Aurora (green), Nord (arctic blue-grey), Sunset (warm coral), Mono (neutral greyscale), Rose (pink), OLED (pure black for OLED displays), Glass (translucent blur over a themed gradient) and Custom.
 
 Selecting any preset updates the whole client. Editing **Base**, **Surface** or **Text** switches to the Custom theme and applies live; the **Accent** picker recolours controls on any theme. Derived shades (tinted rows, elevated hovers, subdued text) are generated from those four colours, and **Reset theme** returns to Spotify. The palette is stored in Spotify's local storage and restored on restart.
 
@@ -170,6 +170,7 @@ Data sources:
 - **Artist matching** resolves names through Wikidata and only accepts entities whose occupation or group type is music-related. Exact but unrelated articles (for example *Bushido*, the samurai code, instead of the German rapper) are ignored, and the tab shows no biography rather than the wrong one.
 - **No DRM changes, no audio capture, no account changes.**
 - **Nothing is uploaded** except the queries needed for lyrics, translation and artist data. No analytics, no telemetry.
+- **Resilience.** Requests time out after 12 seconds and retry once on network or server errors; stale artist responses are discarded, and lyric/artist caches are capped so long sessions stay stable.
 
 ---
 

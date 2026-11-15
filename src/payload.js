@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.8.0';
+  const VERSION = '3.9.1';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -85,6 +85,22 @@
       vars: { '--background-base': '#06110f', '--background-elevated-base': '#0d201c', '--background-elevated-highlight': '#132b25', '--background-tinted-base': '#0a1916', '--background-tinted-highlight': '#10241f', '--text-base': '#ecfdf5', '--text-subdued': '#93b8ab', '--essential-base': '#34d399', '--essential-bright-accent': '#6ee7b7' }
     },
     {
+      id: 'nord', name: 'Nord', accent: '#88c0d0',
+      vars: { '--background-base': '#22272f', '--background-elevated-base': '#2e3440', '--background-elevated-highlight': '#3b4252', '--background-tinted-base': '#282e38', '--background-tinted-highlight': '#353c49', '--text-base': '#eceff4', '--text-subdued': '#aeb8c8', '--essential-base': '#88c0d0', '--essential-bright-accent': '#8fbcbb' }
+    },
+    {
+      id: 'sunset', name: 'Sunset', accent: '#ff7a59',
+      vars: { '--background-base': '#1a0f14', '--background-elevated-base': '#2a1820', '--background-elevated-highlight': '#37202a', '--background-tinted-base': '#211319', '--background-tinted-highlight': '#301c25', '--text-base': '#fff1ea', '--text-subdued': '#c9a79c', '--essential-base': '#ff7a59', '--essential-bright-accent': '#ffa07a' }
+    },
+    {
+      id: 'mono', name: 'Mono', accent: '#f5f5f5',
+      vars: { '--background-base': '#0f0f0f', '--background-elevated-base': '#1c1c1c', '--background-elevated-highlight': '#272727', '--background-tinted-base': '#151515', '--background-tinted-highlight': '#222222', '--text-base': '#f5f5f5', '--text-subdued': '#9a9a9a', '--essential-base': '#f5f5f5', '--essential-bright-accent': '#ffffff' }
+    },
+    {
+      id: 'rose', name: 'Rose', accent: '#f472b6',
+      vars: { '--background-base': '#160b12', '--background-elevated-base': '#24121d', '--background-elevated-highlight': '#311a27', '--background-tinted-base': '#1c0f17', '--background-tinted-highlight': '#2a1621', '--text-base': '#ffeef6', '--text-subdued': '#c9a3b6', '--essential-base': '#f472b6', '--essential-bright-accent': '#f9a8d4' }
+    },
+    {
       id: 'oled', name: 'OLED', accent: '#1ed760', effect: 'oled',
       vars: { '--background-base': '#000000', '--background-elevated-base': '#000000', '--background-elevated-highlight': '#0a0a0a', '--background-tinted-base': '#000000', '--background-tinted-highlight': '#050505', '--text-base': '#ffffff', '--text-subdued': '#a7a7a7', '--essential-base': '#1ed760', '--essential-bright-accent': '#1ed760' }
     },
@@ -121,6 +137,7 @@
     artist: null,
     artistStatus: '',
     artistFor: '',
+    artistRequest: 0,
     requestId: 0
   };
 
@@ -276,7 +293,7 @@
           <div class="sum-note">Translation and pronunciation modelled on <a class="sum-link" href="https://github.com/TheoreticallyBryChen/Lingo-lyrics" target="_blank" rel="noreferrer noopener">Lingo-lyrics</a> (independent implementation).</div>
         </section>
       </div>
-      <footer class="sum-footer"><span>Spotifine · LRCLIB · Wikipedia · Wikidata</span></footer>
+      <footer class="sum-footer"><span id="sum-track-label">Spotifine</span></footer>
     </aside>`;
 
   let refs = {};
@@ -324,6 +341,7 @@
       css: root.querySelector('#sum-css'),
       cssApply: root.querySelector('#sum-css-apply'),
       cssReset: root.querySelector('#sum-css-reset'),
+      trackLabel: root.querySelector('#sum-track-label'),
       html: root.querySelector('#sum-html'),
       htmlApply: root.querySelector('#sum-html-apply'),
       htmlReset: root.querySelector('#sum-html-reset')
@@ -343,7 +361,7 @@
       button.type = 'button';
       button.className = 'sum-theme';
       button.dataset.sumTheme = theme.id;
-      button.innerHTML = `<span class="sum-theme-dot" style="background:${theme.accent}"></span><span>${theme.name}</span>`;
+      button.innerHTML = `<span class="sum-theme-dot" style="background:linear-gradient(135deg, ${theme.vars['--background-base']} 50%, ${theme.accent} 50%)"></span><span>${theme.name}</span>`;
       button.addEventListener('click', () => {
         state.theme = theme.id;
         state.accent = '';
@@ -753,9 +771,9 @@
     const title = titleLink ? titleLink.textContent.trim() : '';
     if (!title) { return null; }
     const artistLinks = [...widget.querySelectorAll('a[href*="/artist/"]')]
-      .map((link) => link.textContent.trim())
-      .filter((name) => name && name !== title);
-    const artists = [...new Set(artistLinks)];
+      .map((link) => ({ name: link.textContent.trim(), url: link.href }))
+      .filter((entry) => entry.name && entry.name !== title);
+    const artists = [...new Set(artistLinks.map((entry) => entry.name))];
     const coverImg = widget.querySelector('[data-testid="cover-art-image"]') || widget.querySelector('img');
     const positionEl = document.querySelector('[data-testid="playback-position"]');
     const durationEl = document.querySelector('[data-testid="playback-duration"]');
@@ -766,6 +784,7 @@
       title,
       artists,
       artist: artists.join(', ') || 'Unknown artist',
+      artistUrl: (artistLinks.find((entry) => entry.name === artists[0]) || {}).url || '',
       cover: coverImg ? coverImg.src : '',
       position: parseClock(positionEl ? positionEl.textContent : ''),
       duration: parseClock(durationEl ? durationEl.textContent : ''),
@@ -775,9 +794,9 @@
 
   function updateTrackLabel() {
     if (!refs.trackLabel) { return; }
-    refs.trackLabel.textContent = state.track
-      ? state.track.title + ' — ' + state.track.artist
-      : 'No track playing';
+    const track = state.track;
+    refs.trackLabel.textContent = track ? track.title + ' — ' + track.artist : 'Spotifine';
+    refs.trackLabel.title = track ? 'Sources: LRCLIB, Wikipedia and Wikidata' : '';
   }
 
   function syncTrack() {
@@ -831,10 +850,33 @@
       .replace(/\s*[([].*?[)\]]\s*/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
   }
 
-  async function fetchJson(url) {
-    const response = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!response.ok) { throw new Error('HTTP ' + response.status); }
-    return response.json();
+  async function fetchJson(url, attempts) {
+    const total = attempts || 2;
+    let lastError = null;
+    for (let attempt = 0; attempt < total; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+      try {
+        const response = await fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal });
+        if (!response.ok) { throw new Error('HTTP ' + response.status); }
+        return await response.json();
+      } catch (error) {
+        lastError = error;
+        if (/^HTTP 4/.test(String(error && error.message || ''))) { break; }
+        if (attempt + 1 < total) { await new Promise((resolve) => setTimeout(resolve, 350)); }
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    throw lastError || new Error('Request failed');
+  }
+
+  function trimCache(cache, limit) {
+    while (cache.size > limit) {
+      const oldest = cache.keys().next().value;
+      if (oldest === undefined) { break; }
+      cache.delete(oldest);
+    }
   }
 
   const IMAGE_BLOCKLIST = /(logo|icon|signature|wordmark|symbol|seal|coat[ _]of[ _]arms|flag|map|chart|award|cover|album|single|poster|screenshot|commons|wikimedia|wikipedia|edit|question|ambox|padlock|barnstar|stub|placeholder|avatar|default)/i;
@@ -906,11 +948,15 @@
     facebook: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.1 14V8.8h1.8l.3-2H9.1V5.4c0-.6.2-1 1-1h1V2.5c-.2 0-.8-.1-1.6-.1-1.6 0-2.7 1-2.7 2.8v1.6H5v2h1.8V14z"/></svg>',
     youtube: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M14.3 5.3c-.1-.6-.6-1.1-1.2-1.2C12 3.8 8 3.8 8 3.8s-4 0-5.1.3c-.6.1-1.1.6-1.2 1.2C1.5 6.3 1.5 8 1.5 8s0 1.7.2 2.7c.1.6.6 1.1 1.2 1.2 1.1.3 5.1.3 5.1.3s4 0 5.1-.3c.6-.1 1.1-.6 1.2-1.2.2-1 .2-2.7.2-2.7s0-1.7-.2-2.7zM6.6 10.2V5.8L10.4 8z"/></svg>',
     tiktok: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.9 2h1.8c.1.9.6 1.7 1.4 2.2.4.2.8.3 1.2.3v1.9c-.9 0-1.8-.3-2.5-.8v4.2a3.5 3.5 0 1 1-3.5-3.5c.2 0 .4 0 .6.1v2a1.6 1.6 0 1 0 1 1.4z"/></svg>',
-    musicbrainz: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 11.3V4.4l5.8-1.1v6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="4.6" cy="11.8" r="1.7"/><circle cx="10.4" cy="10.4" r="1.7"/></svg>'
+    musicbrainz: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 11.3V4.4l5.8-1.1v6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="4.6" cy="11.8" r="1.7"/><circle cx="10.4" cy="10.4" r="1.7"/></svg>',
+    spotify: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.7 6.2c2.2-.6 4.6-.3 6.6.8M5 8.2c1.8-.5 3.8-.2 5.4.7M5.4 10.1c1.4-.4 2.9-.2 4.1.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>',
+    wikidata: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l6.2 6.2L8 14.2 1.8 8z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>'
   };
 
   function iconForLink(label) {
     const value = String(label || '').toLowerCase();
+    if (value.indexOf('spotify') >= 0) { return LINK_ICONS.spotify; }
+    if (value.indexOf('wikidata') >= 0) { return LINK_ICONS.wikidata; }
     if (value.indexOf('instagram') >= 0) { return LINK_ICONS.instagram; }
     if (value.indexOf('twitter') >= 0 || value.indexOf('x /') >= 0) { return LINK_ICONS.x; }
     if (value.indexOf('facebook') >= 0) { return LINK_ICONS.facebook; }
@@ -972,14 +1018,14 @@
       if (!record) {
         state.lines = [];
         state.lyricsStatus = 'No lyrics were found for this track.';
-        lyricCache.set(track.key, { lines: [], status: state.lyricsStatus });
+        lyricCache.set(track.key, { lines: [], status: state.lyricsStatus }); trimCache(lyricCache, 40);
         renderLyrics();
         return;
       }
       if (record.instrumental) {
         state.lines = [];
         state.lyricsStatus = 'Instrumental track — no lyrics to display.';
-        lyricCache.set(track.key, { lines: [], status: state.lyricsStatus });
+        lyricCache.set(track.key, { lines: [], status: state.lyricsStatus }); trimCache(lyricCache, 40);
         renderLyrics();
         return;
       }
@@ -994,7 +1040,7 @@
       if (!state.lines.length) {
         state.lyricsStatus = 'No lyrics were found for this track.';
       }
-      lyricCache.set(track.key, { lines: state.lines, status: state.lyricsStatus });
+      lyricCache.set(track.key, { lines: state.lines, status: state.lyricsStatus }); trimCache(lyricCache, 40);
       renderLyrics();
       updateActive(true);
       if (state.lang && state.mode !== 'off') { translateLines(); }
@@ -1263,10 +1309,14 @@
   async function loadArtistForCurrent() {
     const track = state.track;
     if (!track) { return; }
-    if (state.artistFor === track.artists[0] && state.artist) { return; }
-    const name = track.artists[0] || track.artist;
+    return loadArtistFor(track.artists[0] || track.artist, track.artistUrl || '');
+  }
+
+  async function loadArtistFor(name, artistUrl) {
     if (!name) { return; }
+    if (state.artistFor === name && state.artist) { return; }
     state.artistFor = name;
+    const requestId = ++state.artistRequest;
     const memory = artistCache.get(name);
     if (memory) { state.artist = memory; renderArtist(); return; }
     if (refs.artist) { refs.artist.innerHTML = '<div class="sum-status">Loading artist information…</div>'; }
@@ -1297,7 +1347,7 @@
         }
         if (entity) {
             const ids = [];
-            for (const property of ['P19', 'P27', 'P106', 'P136', 'P264']) {
+            for (const property of ['P19', 'P27', 'P106', 'P136', 'P264', 'P740', 'P527', 'P1303']) {
               const value = claimValue(entity, property);
               if (property === 'P106' && entity.claims.P106) {
                 for (const claim of entity.claims.P106.slice(0, 4)) {
@@ -1308,6 +1358,7 @@
             }
             labels = await resolveLabels(ids);
             const links = [];
+            if (artistUrl) { links.push({ label: 'Spotify', url: artistUrl }); }
             const website = claimValue(entity, 'P856');
             if (website) { links.push({ label: 'Official website', url: website }); }
             const x = claimValue(entity, 'P2002');
@@ -1322,6 +1373,7 @@
             if (tiktok) { links.push({ label: 'TikTok', url: 'https://tiktok.com/@' + tiktok }); }
             const musicbrainz = claimValue(entity, 'P434');
             if (musicbrainz) { links.push({ label: 'MusicBrainz', url: 'https://musicbrainz.org/artist/' + musicbrainz }); }
+            if (qid) { links.push({ label: 'Wikidata', url: 'https://www.wikidata.org/wiki/' + qid }); }
             if (summary && summary.content_urls && summary.content_urls.desktop) {
               links.unshift({ label: 'Wikipedia', url: summary.content_urls.desktop.page });
             }
@@ -1339,12 +1391,26 @@
             if (birthPlace && birthPlace.id && labels[birthPlace.id]) { facts.push(['Birthplace', labels[birthPlace.id]]); }
             const country = claimValue(entity, 'P27');
             if (country && country.id && labels[country.id]) { facts.push(['Country', labels[country.id]]); }
+            const origin = claimValue(entity, 'P740');
+            if (origin && origin.id && labels[origin.id]) { facts.push(['Origin', labels[origin.id]]); }
+            const active = claimValue(entity, 'P2031');
+            if (active) { facts.push(['Active', formatDate(active)]); }
             if (genres.length) { facts.push(['Genres', genres.join(', ')]); }
             const occupations = (entity.claims.P106 || []).slice(0, 3).map((claim) => {
               const id = claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value && claim.mainsnak.datavalue.value.id;
               return id ? labels[id] : null;
             }).filter(Boolean);
             if (occupations.length) { facts.push(['Profession', occupations.join(', ')]); }
+            const instrumentIds = (entity.claims.P1303 || []).slice(0, 3)
+              .map((claim) => claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value && claim.mainsnak.datavalue.value.id)
+              .filter(Boolean);
+            const instruments = instrumentIds.map((id) => labels[id]).filter(Boolean);
+            if (instruments.length) { facts.push(['Instruments', instruments.join(', ')]); }
+            const memberIds = (entity.claims.P527 || []).slice(0, 6)
+              .map((claim) => claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value && claim.mainsnak.datavalue.value.id)
+              .filter(Boolean);
+            const members = memberIds.map((id) => labels[id]).filter(Boolean);
+            if (members.length) { facts.push(['Members', members.join(', ')]); }
             const label = claimValue(entity, 'P264');
             if (label && label.id && labels[label.id]) { facts.push(['Label', labels[label.id]]); }
             wikidata = { facts, links, qid };
@@ -1365,17 +1431,19 @@
         summary: summary && summary.extract ? summary.extract : '',
         image: images[0] || '',
         images,
+        spotifyUrl: artistUrl || '',
         facts: wikidata ? wikidata.facts : [],
         links: wikidata ? wikidata.links : [],
         wikiUrl: summary && summary.content_urls && summary.content_urls.desktop ? summary.content_urls.desktop.page : ''
       };
       artistCache.set(name, artist);
-      if (state.artistFor !== name) { return; }
+      trimCache(artistCache, 30);
+      if (state.artistFor !== name || requestId !== state.artistRequest) { return; }
       state.artist = artist;
       state.artistStatus = '';
       renderArtist();
     } catch (error) {
-      if (state.artistFor !== name) { return; }
+      if (state.artistFor !== name || requestId !== state.artistRequest) { return; }
       state.artist = { name, summary: '', facts: [], links: [], error: error.message };
       renderArtist();
     }
@@ -1520,13 +1588,19 @@
     refs.artist.appendChild(note);
   }
 
+  let loopBusy = false;
   function loop() {
-    syncTrack();
-    ensurePlayerButton();
-    decorateAllMenus();
-    if (state.open && state.tab === 'lyrics' && state.lines.length) {
-      updateActive(false);
-    }
+    if (loopBusy) { return; }
+    loopBusy = true;
+    try {
+      syncTrack();
+      ensurePlayerButton();
+      decorateAllMenus();
+      if (state.open && state.tab === 'lyrics' && state.lines.length) {
+        updateActive(false);
+      }
+    } catch (error) { }
+    finally { loopBusy = false; }
   }
 
   if (window.__SUM_KEY_HANDLER__) { document.removeEventListener('keydown', window.__SUM_KEY_HANDLER__); }
@@ -1556,6 +1630,8 @@
     render: renderLyrics,
     linkIcon: iconForLink,
     lookupArtist: (name) => findMusicEntity(name).then((match) => match ? { qid: match.qid, title: match.title, description: entityDescription(match.entity) } : null),
+    previewArtist: (name, url) => loadArtistFor(name, url || ''),
+    refreshArtist: loadArtistForCurrent,
     refresh: window.__SUM_REFRESH__
   };
 
