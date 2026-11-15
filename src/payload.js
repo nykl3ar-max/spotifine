@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.2.5';
+  const VERSION = '3.2.6';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {

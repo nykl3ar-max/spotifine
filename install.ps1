@@ -13,7 +13,7 @@
 #>
 
 $ErrorActionPreference = 'Stop'
-$Version = '3.2.5'
+$Version = '3.2.6'
 $Repo = 'nykl3ar-max/spotify-ultimate-mod-injector'
 $Branch = 'main'
 $BaseUrl = "https://github.com/$Repo/raw/refs/heads/$Branch"
