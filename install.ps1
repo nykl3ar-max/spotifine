@@ -70,7 +70,7 @@ foreach ($file in $Files) {
     if (-not (Test-Path -LiteralPath $parent)) {
         New-Item -ItemType Directory -Path $parent -Force | Out-Null
     }
-    $url = "$BaseUrl/$file?v=$Version"
+    $url = "$BaseUrl/$file"
     $downloaded = $false
     for ($attempt = 0; $attempt -lt 3 -and -not $downloaded; $attempt++) {
         try {
