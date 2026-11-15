@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.15.1';
+  const VERSION = '3.15.2';
   const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
   const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
   const FACT_ORDER = ['Birth name', 'Born', 'Died', 'Birthplace', 'Origin', 'Country', 'Type', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
@@ -1031,7 +1031,6 @@
       });
     }
     if (refs.theme) { refs.theme.value = theme.id; }
-    nudgeRepaint();
   }
 
   function applyPreferences() {
@@ -1040,12 +1039,6 @@
       refs.panel.classList.toggle('is-reduced-motion', state.reduceMotion);
     }
     if (refs.sizeValue) { refs.sizeValue.textContent = state.size + 'px'; }
-  }
-
-  function nudgeRepaint() {
-    requestAnimationFrame(() => {
-      try { window.dispatchEvent(new Event('resize')); } catch (error) { }
-    });
   }
 
   function applyCustomCss(value) {
@@ -1077,7 +1070,6 @@
     if (!refs.panel) { return; }
     refs.panel.classList.toggle('is-open', state.open);
     syncToggleState();
-    nudgeRepaint();
     if (state.open && !immediate) {
       if (state.tab === 'artist') { loadArtistForCurrent(); }
       if (state.tab === 'lyrics') { updateActive(true); }
@@ -1090,7 +1082,6 @@
     if (!refs.tabs) { return; }
     refs.tabs.forEach((button) => button.classList.toggle('is-active', button.dataset.sumTab === tab));
     refs.sections.forEach((section) => section.classList.toggle('is-active', section.dataset.sumSection === tab));
-    nudgeRepaint();
     if (tab === 'artist' && !immediate) { loadArtistForCurrent(); }
     if (tab === 'lyrics' && !immediate) { updateActive(true); }
   }
