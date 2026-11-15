@@ -1,0 +1,464 @@
+/* Spotify Ultimate Mod — injected panel styles */
+
+#sum-root {
+  --sum-accent: #8b5cf6;
+  --sum-panel-bg: color-mix(in srgb, var(--background-elevated-base, #15151d) 92%, transparent);
+  --sum-line: color-mix(in srgb, var(--text-base, #fff) 12%, transparent);
+  --sum-muted: var(--text-subdued, #a5a5b4);
+  position: fixed;
+  z-index: 2147483000;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-family, 'Segoe UI', system-ui, sans-serif);
+  color: var(--text-base, #fff);
+}
+
+#sum-root * {
+  box-sizing: border-box;
+}
+
+#sum-toggle {
+  position: fixed;
+  right: 18px;
+  bottom: 104px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid color-mix(in srgb, var(--sum-accent) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sum-accent) 18%, var(--background-elevated-base, #15151d));
+  color: var(--text-base, #fff);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.9);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+#sum-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 50px -18px color-mix(in srgb, var(--sum-accent) 70%, transparent);
+}
+
+#sum-toggle.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sum-glyph {
+  font-size: 15px;
+  color: var(--sum-accent);
+}
+
+#sum-panel {
+  position: fixed;
+  top: 72px;
+  right: 18px;
+  bottom: 108px;
+  width: 404px;
+  max-width: calc(100vw - 36px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--sum-line);
+  border-radius: 18px;
+  background: var(--sum-panel-bg);
+  backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: 0 30px 90px -30px rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(12px) scale(0.99);
+  visibility: hidden;
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+}
+
+#sum-panel.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  visibility: visible;
+}
+
+.sum-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--sum-line);
+}
+
+.sum-brand {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.sum-tabs {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  background: color-mix(in srgb, var(--text-base, #fff) 6%, transparent);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.sum-tab {
+  border: 0;
+  background: transparent;
+  color: var(--sum-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.sum-tab:hover { color: var(--text-base, #fff); }
+
+.sum-tab.is-active {
+  background: var(--sum-accent);
+  color: #0b0b10;
+}
+
+.sum-icon {
+  border: 0;
+  background: transparent;
+  color: var(--sum-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.sum-icon:hover {
+  background: color-mix(in srgb, var(--text-base, #fff) 10%, transparent);
+  color: var(--text-base, #fff);
+}
+
+.sum-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sum-section {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 12px 14px 4px;
+}
+
+.sum-section.is-active {
+  display: flex;
+}
+
+.sum-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sum-select,
+.sum-textarea,
+.sum-color {
+  background: color-mix(in srgb, var(--text-base, #fff) 7%, transparent);
+  color: var(--text-base, #fff);
+  border: 1px solid var(--sum-line);
+  border-radius: 9px;
+  font-size: 12px;
+  padding: 6px 8px;
+  outline: none;
+}
+
+.sum-select {
+  min-width: 0;
+  cursor: pointer;
+}
+
+#sum-lang { flex: 1 1 46%; }
+#sum-mode { flex: 1 1 46%; }
+
+.sum-select option {
+  background: #15151d;
+  color: #fff;
+}
+
+.sum-status {
+  font-size: 12px;
+  color: var(--sum-muted);
+  padding: 4px 2px 8px;
+}
+
+.sum-lyrics {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 4px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--sum-accent) 50%, transparent) transparent;
+}
+
+.sum-line {
+  padding: 7px 6px;
+  border-radius: 10px;
+  border-left: 2px solid transparent;
+  opacity: 0.62;
+  transition: opacity 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.sum-line-text {
+  font-size: var(--sum-lyric-size, 15px);
+  line-height: 1.42;
+  font-weight: 600;
+}
+
+.sum-line-trans {
+  font-size: calc(var(--sum-lyric-size, 15px) * 0.84);
+  line-height: 1.4;
+  margin-top: 3px;
+  color: var(--sum-accent);
+  font-weight: 500;
+}
+
+.sum-lyrics.mode-translated .sum-line-text {
+  display: none;
+}
+
+.sum-lyrics.mode-translated .sum-line-trans {
+  font-size: var(--sum-lyric-size, 15px);
+  color: var(--text-base, #fff);
+}
+
+.sum-line.is-active {
+  opacity: 1;
+  border-left-color: var(--sum-accent);
+  background: color-mix(in srgb, var(--sum-accent) 12%, transparent);
+}
+
+.sum-line.is-active .sum-line-text {
+  color: #fff;
+  text-shadow: 0 0 32px color-mix(in srgb, var(--sum-accent) 55%, transparent);
+}
+
+.sum-artist {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 2px 24px;
+}
+
+.sum-artist-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sum-artist-image {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid var(--sum-line);
+}
+
+.sum-artist-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.sum-summary {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--text-base, #fff) 82%, transparent);
+  margin: 0 0 12px;
+}
+
+.sum-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--sum-line);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.sum-fact {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--text-base, #fff) 4%, transparent);
+  font-size: 12px;
+}
+
+.sum-fact-key {
+  flex: 0 0 92px;
+  color: var(--sum-muted);
+}
+
+.sum-fact-value {
+  flex: 1;
+  font-weight: 600;
+}
+
+.sum-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.sum-link {
+  text-decoration: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--sum-accent) 40%, transparent);
+  color: var(--text-base, #fff);
+  background: color-mix(in srgb, var(--sum-accent) 10%, transparent);
+  transition: background 0.14s ease;
+}
+
+.sum-link:hover {
+  background: color-mix(in srgb, var(--sum-accent) 26%, transparent);
+}
+
+.sum-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sum-muted);
+  margin: 10px 0 6px;
+}
+
+.sum-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sum-row .sum-label { margin: 6px 0; }
+
+.sum-color {
+  width: 44px;
+  height: 28px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.sum-check {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--sum-accent);
+  cursor: pointer;
+}
+
+.sum-themes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.sum-theme {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--sum-line);
+  background: color-mix(in srgb, var(--text-base, #fff) 4%, transparent);
+  color: var(--text-base, #fff);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.sum-theme:hover {
+  background: color-mix(in srgb, var(--sum-accent) 12%, transparent);
+}
+
+.sum-theme.is-active {
+  border-color: var(--sum-accent);
+  box-shadow: inset 0 0 0 1px var(--sum-accent);
+}
+
+.sum-theme-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.sum-textarea {
+  width: 100%;
+  min-height: 110px;
+  max-height: 220px;
+  resize: vertical;
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  padding: 10px;
+}
+
+.sum-actions {
+  justify-content: flex-start;
+  margin-top: 8px;
+}
+
+.sum-btn {
+  border: 1px solid transparent;
+  background: var(--sum-accent);
+  color: #0b0b10;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.sum-btn.sum-ghost {
+  background: transparent;
+  border-color: var(--sum-line);
+  color: var(--text-base, #fff);
+}
+
+.sum-note {
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--sum-muted);
+  margin-top: 8px;
+}
+
+.sum-footer {
+  border-top: 1px solid var(--sum-line);
+  padding: 8px 14px;
+  font-size: 11px;
+  color: var(--sum-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sum-panel,
+  #sum-toggle,
+  .sum-line {
+    transition: none;
+  }
+}

@@ -1,0 +1,898 @@
+(() => {
+  'use strict';
+
+  const VERSION = '3.0.1';
+  const CSS = window.__SUM_CSS__ || '';
+
+  if (window.__SUM_VERSION__ === VERSION && document.getElementById('sum-root')) {
+    if (typeof window.__SUM_REFRESH__ === 'function') {
+      try { window.__SUM_REFRESH__(); } catch (error) { }
+    }
+    return 'ok';
+  }
+  window.__SUM_VERSION__ = VERSION;
+
+  const LS = {
+    theme: 'sum.theme',
+    accent: 'sum.accent',
+    lang: 'sum.lang',
+    mode: 'sum.mode',
+    size: 'sum.size',
+    css: 'sum.customCss',
+    open: 'sum.open',
+    tab: 'sum.tab',
+    scroll: 'sum.autoscroll',
+    trans: 'sum.translations.v1'
+  };
+
+  const readSetting = (key, fallback) => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw === null ? fallback : JSON.parse(raw);
+    } catch (error) {
+      return fallback;
+    }
+  };
+
+  const writeSetting = (key, value) => {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (error) { }
+  };
+
+  const LANGUAGES = [
+    ['en', 'English'], ['de', 'German'], ['fr', 'French'], ['es', 'Spanish'],
+    ['pt', 'Portuguese'], ['it', 'Italian'], ['nl', 'Dutch'], ['pl', 'Polish'],
+    ['ru', 'Russian'], ['uk', 'Ukrainian'], ['tr', 'Turkish'], ['sv', 'Swedish'],
+    ['no', 'Norwegian'], ['da', 'Danish'], ['fi', 'Finnish'], ['cs', 'Czech'],
+    ['sk', 'Slovak'], ['hu', 'Hungarian'], ['ro', 'Romanian'], ['el', 'Greek'],
+    ['ja', 'Japanese'], ['ko', 'Korean'], ['zh-CN', 'Chinese (Simplified)'],
+    ['zh-TW', 'Chinese (Traditional)'], ['ar', 'Arabic'], ['he', 'Hebrew'],
+    ['hi', 'Hindi'], ['id', 'Indonesian'], ['vi', 'Vietnamese'], ['th', 'Thai']
+  ];
+
+  const THEMES = [
+    {
+      id: 'midnight', name: 'Midnight', accent: '#8b5cf6',
+      vars: { '--background-base': '#0b0b10', '--background-elevated-base': '#15151d', '--background-elevated-highlight': '#1c1c26', '--background-tinted-base': '#131319', '--background-tinted-highlight': '#1b1b25', '--text-base': '#f5f5f7', '--text-subdued': '#a5a5b4', '--essential-base': '#8b5cf6', '--essential-bright-accent': '#a78bfa' }
+    },
+    {
+      id: 'amoled', name: 'AMOLED', accent: '#00e5a0',
+      vars: { '--background-base': '#000000', '--background-elevated-base': '#0a0a0a', '--background-elevated-highlight': '#141414', '--background-tinted-base': '#070707', '--background-tinted-highlight': '#101010', '--text-base': '#ffffff', '--text-subdued': '#9a9a9a', '--essential-base': '#00e5a0', '--essential-bright-accent': '#5effc9' }
+    },
+    {
+      id: 'neon', name: 'Neon', accent: '#ff2ea6',
+      vars: { '--background-base': '#0a0612', '--background-elevated-base': '#170a24', '--background-elevated-highlight': '#221034', '--background-tinted-base': '#120a1c', '--background-tinted-highlight': '#1d0f2e', '--text-base': '#f7e9ff', '--text-subdued': '#c0a3d8', '--essential-base': '#ff2ea6', '--essential-bright-accent': '#ff7ac6' }
+    },
+    {
+      id: 'ocean', name: 'Ocean', accent: '#22d3ee',
+      vars: { '--background-base': '#04121d', '--background-elevated-base': '#0a2233', '--background-elevated-highlight': '#0f2c41', '--background-tinted-base': '#071a26', '--background-tinted-highlight': '#0d2534', '--text-base': '#e6f7ff', '--text-subdued': '#8fb6c9', '--essential-base': '#22d3ee', '--essential-bright-accent': '#67e8f9' }
+    },
+    {
+      id: 'crimson', name: 'Crimson', accent: '#ff3b5c',
+      vars: { '--background-base': '#120608', '--background-elevated-base': '#211013', '--background-elevated-highlight': '#2c161a', '--background-tinted-base': '#190b0e', '--background-tinted-highlight': '#251216', '--text-base': '#fff1f2', '--text-subdued': '#c9a1a6', '--essential-base': '#ff3b5c', '--essential-bright-accent': '#ff7d92' }
+    },
+    {
+      id: 'aurora', name: 'Aurora', accent: '#34d399',
+      vars: { '--background-base': '#06110f', '--background-elevated-base': '#0d201c', '--background-elevated-highlight': '#132b25', '--background-tinted-base': '#0a1916', '--background-tinted-highlight': '#10241f', '--text-base': '#ecfdf5', '--text-subdued': '#93b8ab', '--essential-base': '#34d399', '--essential-bright-accent': '#6ee7b7' }
+    }
+  ];
+
+  const state = {
+    tab: readSetting(LS.tab, 'lyrics'),
+    theme: readSetting(LS.theme, 'midnight'),
+    accent: readSetting(LS.accent, ''),
+    lang: readSetting(LS.lang, 'en'),
+    mode: readSetting(LS.mode, 'both'),
+    size: Number(readSetting(LS.size, 15)) || 15,
+    autoscroll: readSetting(LS.scroll, true),
+    open: readSetting(LS.open, false),
+    track: null,
+    lines: [],
+    active: -1,
+    translated: {},
+    translationState: 'idle',
+    lyricsStatus: '',
+    artist: null,
+    artistStatus: '',
+    artistFor: '',
+    requestId: 0
+  };
+
+  const lyricCache = new Map();
+  const artistCache = new Map();
+  const sheetStore = {};
+
+  function installSheet(id, css) {
+    try {
+      if (!sheetStore[id]) {
+        const sheet = new CSSStyleSheet();
+        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+        sheetStore[id] = sheet;
+      }
+      sheetStore[id].replaceSync(css);
+    } catch (error) {
+      let style = document.getElementById('sum-style-' + id);
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'sum-style-' + id;
+        document.head.appendChild(style);
+      }
+      style.textContent = css;
+    }
+  }
+
+  function sanitizeCss(css) {
+    return String(css || '')
+      .replace(/@import[^;]*;?/gi, '')
+      .replace(/javascript\s*:/gi, '')
+      .replace(/expression\s*\(/gi, '')
+      .replace(/url\s*\(\s*['"]?(?!data:)[^)]*\)/gi, '')
+      .replace(/<\/?script[^>]*>/gi, '');
+  }
+
+  const html = `
+    <button id="sum-toggle" type="button" aria-label="Open Spotify Ultimate Mod" title="Spotify Ultimate Mod (Ctrl+Shift+U)">
+      <span class="sum-glyph">&#9835;</span><span class="sum-toggle-text">Ultimate</span>
+    </button>
+    <aside id="sum-panel" aria-label="Spotify Ultimate Mod panel">
+      <header class="sum-header">
+        <div class="sum-brand">Ultimate Mod</div>
+        <div class="sum-tabs">
+          <button type="button" class="sum-tab" data-sum-tab="lyrics">Lyrics</button>
+          <button type="button" class="sum-tab" data-sum-tab="artist">Artist</button>
+          <button type="button" class="sum-tab" data-sum-tab="style">Style</button>
+        </div>
+        <button type="button" id="sum-close" class="sum-icon" aria-label="Close panel">&#10005;</button>
+      </header>
+      <div class="sum-body">
+        <section class="sum-section" data-sum-section="lyrics">
+          <div class="sum-toolbar">
+            <select id="sum-lang" class="sum-select" aria-label="Translate lyrics to"></select>
+            <select id="sum-mode" class="sum-select" aria-label="Lyrics display mode">
+              <option value="both">Both languages</option>
+              <option value="translated">Translated only</option>
+              <option value="off">Original only</option>
+            </select>
+            <button type="button" id="sum-font-down" class="sum-icon" title="Smaller lyrics">A&#8722;</button>
+            <button type="button" id="sum-font-up" class="sum-icon" title="Larger lyrics">A+</button>
+          </div>
+          <div class="sum-status" id="sum-lyrics-status">Waiting for playback&#8230;</div>
+          <div class="sum-lyrics" id="sum-lyrics"></div>
+        </section>
+        <section class="sum-section" data-sum-section="artist">
+          <div id="sum-artist" class="sum-artist"></div>
+        </section>
+        <section class="sum-section" data-sum-section="style">
+          <div class="sum-label">Theme</div>
+          <div class="sum-themes" id="sum-themes"></div>
+          <div class="sum-row">
+            <span class="sum-label">Accent</span>
+            <input id="sum-accent" type="color" class="sum-color" aria-label="Accent colour">
+          </div>
+          <div class="sum-row">
+            <span class="sum-label">Auto-scroll lyrics</span>
+            <input id="sum-scroll" type="checkbox" class="sum-check">
+          </div>
+          <div class="sum-label">Custom CSS</div>
+          <textarea id="sum-css" class="sum-textarea" spellcheck="false" placeholder="/* Customise the interface */"></textarea>
+          <div class="sum-row sum-actions">
+            <button type="button" id="sum-css-apply" class="sum-btn">Apply</button>
+            <button type="button" id="sum-css-reset" class="sum-btn sum-ghost">Reset</button>
+          </div>
+          <div class="sum-note">Custom CSS is sanitised: imports and remote URLs are removed.</div>
+        </section>
+      </div>
+      <footer class="sum-footer"><span id="sum-track-label">No track playing</span></footer>
+    </aside>`;
+
+  let refs = {};
+
+  function mount() {
+    const old = document.getElementById('sum-root');
+    if (old) { old.remove(); }
+    installSheet('base', CSS);
+
+    const root = document.createElement('div');
+    root.id = 'sum-root';
+    root.className = 'sum-root';
+    root.innerHTML = html;
+    document.body.appendChild(root);
+
+    refs = {
+      root,
+      toggle: root.querySelector('#sum-toggle'),
+      panel: root.querySelector('#sum-panel'),
+      close: root.querySelector('#sum-close'),
+      tabs: [...root.querySelectorAll('.sum-tab')],
+      sections: [...root.querySelectorAll('[data-sum-section]')],
+      lang: root.querySelector('#sum-lang'),
+      mode: root.querySelector('#sum-mode'),
+      fontUp: root.querySelector('#sum-font-up'),
+      fontDown: root.querySelector('#sum-font-down'),
+      status: root.querySelector('#sum-lyrics-status'),
+      lyrics: root.querySelector('#sum-lyrics'),
+      artist: root.querySelector('#sum-artist'),
+      themes: root.querySelector('#sum-themes'),
+      accent: root.querySelector('#sum-accent'),
+      scroll: root.querySelector('#sum-scroll'),
+      css: root.querySelector('#sum-css'),
+      cssApply: root.querySelector('#sum-css-apply'),
+      cssReset: root.querySelector('#sum-css-reset'),
+      trackLabel: root.querySelector('#sum-track-label')
+    };
+
+    for (const [code, label] of LANGUAGES) {
+      const option = document.createElement('option');
+      option.value = code;
+      option.textContent = label;
+      refs.lang.appendChild(option);
+    }
+    refs.lang.value = state.lang;
+    refs.mode.value = state.mode;
+    refs.scroll.checked = state.autoscroll;
+    refs.css.value = readSetting(LS.css, '');
+    refs.accent.value = state.accent || themeById(state.theme).accent;
+
+    for (const theme of THEMES) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'sum-theme';
+      button.dataset.sumTheme = theme.id;
+      button.innerHTML = `<span class="sum-theme-dot" style="background:${theme.accent}"></span><span>${theme.name}</span>`;
+      button.addEventListener('click', () => {
+        state.theme = theme.id;
+        state.accent = '';
+        writeSetting(LS.theme, theme.id);
+        writeSetting(LS.accent, '');
+        refs.accent.value = theme.accent;
+        applyTheme();
+      });
+      refs.themes.appendChild(button);
+    }
+
+    refs.toggle.addEventListener('click', () => setOpen(!state.open));
+    refs.close.addEventListener('click', () => setOpen(false));
+    refs.tabs.forEach((tab) => tab.addEventListener('click', () => setTab(tab.dataset.sumTab)));
+    refs.lang.addEventListener('change', () => {
+      state.lang = refs.lang.value;
+      writeSetting(LS.lang, state.lang);
+      state.translated = {};
+      translateLines();
+      renderLyrics();
+    });
+    refs.mode.addEventListener('change', () => {
+      state.mode = refs.mode.value;
+      writeSetting(LS.mode, state.mode);
+      renderLyrics();
+    });
+    refs.fontUp.addEventListener('click', () => changeFont(1));
+    refs.fontDown.addEventListener('click', () => changeFont(-1));
+    refs.scroll.addEventListener('change', () => {
+      state.autoscroll = refs.scroll.checked;
+      writeSetting(LS.scroll, state.autoscroll);
+    });
+    refs.accent.addEventListener('input', () => {
+      state.accent = refs.accent.value;
+      writeSetting(LS.accent, state.accent);
+      applyTheme();
+    });
+    refs.cssApply.addEventListener('click', applyCustomCss);
+    refs.cssReset.addEventListener('click', () => {
+      refs.css.value = '';
+      writeSetting(LS.css, '');
+      installSheet('custom', '');
+    });
+
+    applyTheme();
+    applyCustomCss(readSetting(LS.css, ''));
+    setTab(state.tab, true);
+    setOpen(state.open, true);
+    updateTrackLabel();
+  }
+
+  function themeById(id) {
+    return THEMES.find((theme) => theme.id === id) || THEMES[0];
+  }
+
+  function applyTheme() {
+    const theme = themeById(state.theme);
+    const accent = state.accent || theme.accent;
+    const root = document.documentElement;
+    for (const [name, value] of Object.entries(theme.vars)) {
+      root.style.setProperty(name, value);
+    }
+    root.style.setProperty('--essential-base', accent);
+    root.style.setProperty('--essential-bright-accent', accent);
+    root.style.setProperty('--sum-accent', accent);
+    root.setAttribute('data-sum-theme', theme.id);
+    if (refs.themes) {
+      refs.themes.querySelectorAll('.sum-theme').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.sumTheme === theme.id);
+      });
+    }
+  }
+
+  function applyCustomCss(value) {
+    const css = arguments.length ? value : refs.css.value;
+    installSheet('custom', sanitizeCss(css));
+  }
+
+  function changeFont(delta) {
+    state.size = Math.min(28, Math.max(11, state.size + delta));
+    writeSetting(LS.size, state.size);
+    if (refs.lyrics) { refs.lyrics.style.setProperty('--sum-lyric-size', state.size + 'px'); }
+  }
+
+  function setOpen(open, immediate) {
+    state.open = Boolean(open);
+    writeSetting(LS.open, state.open);
+    if (!refs.panel) { return; }
+    refs.panel.classList.toggle('is-open', state.open);
+    refs.toggle.classList.toggle('is-hidden', state.open);
+    if (state.open && !immediate) {
+      if (state.tab === 'artist') { loadArtistForCurrent(); }
+      if (state.tab === 'lyrics') { updateActive(true); }
+    }
+  }
+
+  function setTab(tab, immediate) {
+    state.tab = tab;
+    writeSetting(LS.tab, tab);
+    if (!refs.tabs) { return; }
+    refs.tabs.forEach((button) => button.classList.toggle('is-active', button.dataset.sumTab === tab));
+    refs.sections.forEach((section) => section.classList.toggle('is-active', section.dataset.sumSection === tab));
+    if (tab === 'artist' && !immediate) { loadArtistForCurrent(); }
+    if (tab === 'lyrics' && !immediate) { updateActive(true); }
+  }
+
+  function parseClock(text) {
+    if (!text) { return 0; }
+    const parts = String(text).trim().split(':').map(Number);
+    if (parts.some((value) => Number.isNaN(value))) { return 0; }
+    if (parts.length === 3) { return parts[0] * 3600 + parts[1] * 60 + parts[2]; }
+    if (parts.length === 2) { return parts[0] * 60 + parts[1]; }
+    return parts[0] || 0;
+  }
+
+  function readTrack() {
+    const widget = document.querySelector('[data-testid="now-playing-widget-v2"], [data-testid="now-playing-widget"]');
+    if (!widget) { return null; }
+    const titleLink = widget.querySelector('[data-testid="context-item-link"]');
+    const title = titleLink ? titleLink.textContent.trim() : '';
+    if (!title) { return null; }
+    const artistLinks = [...widget.querySelectorAll('a[href*="/artist/"]')]
+      .map((link) => link.textContent.trim())
+      .filter((name) => name && name !== title);
+    const artists = [...new Set(artistLinks)];
+    const coverImg = widget.querySelector('[data-testid="cover-art-image"]') || widget.querySelector('img');
+    const positionEl = document.querySelector('[data-testid="playback-position"]');
+    const durationEl = document.querySelector('[data-testid="playback-duration"]');
+    const playBtn = document.querySelector('[data-testid="control-button-playpause"]');
+    const key = title + '|' + artists.join(', ');
+    return {
+      key,
+      title,
+      artists,
+      artist: artists.join(', ') || 'Unknown artist',
+      cover: coverImg ? coverImg.src : '',
+      position: parseClock(positionEl ? positionEl.textContent : ''),
+      duration: parseClock(durationEl ? durationEl.textContent : ''),
+      playing: playBtn ? (playBtn.getAttribute('aria-label') || '').toLowerCase().includes('pause') : false
+    };
+  }
+
+  function updateTrackLabel() {
+    if (!refs.trackLabel) { return; }
+    refs.trackLabel.textContent = state.track
+      ? state.track.title + ' — ' + state.track.artist
+      : 'No track playing';
+  }
+
+  function syncTrack() {
+    const track = readTrack();
+    if (!track) {
+      state.track = null;
+      if (refs.status && !state.lines.length) {
+        refs.status.textContent = 'Start a track in Spotify to load lyrics.';
+      }
+      updateTrackLabel();
+      return;
+    }
+    const changed = !state.track || state.track.key !== track.key;
+    const previousDuration = state.track ? state.track.duration : 0;
+    state.track = track;
+    updateTrackLabel();
+    if (changed || (track.duration && track.duration !== previousDuration)) {
+      loadLyrics(track);
+      if (state.tab === 'artist') { loadArtistForCurrent(); }
+    }
+  }
+
+  function stripMeta(line) {
+    return line.replace(/^\[[a-z]+:[^\]]*\]\s*/i, '');
+  }
+
+  function parseLrc(raw) {
+    const lines = [];
+    let offset = 0;
+    const text = String(raw || '');
+    const offsetMatch = text.match(/\[offset:\s*([+-]?\d+)\s*\]/i);
+    if (offsetMatch) { offset = Number(offsetMatch[1]) / 1000; }
+    for (const rawLine of text.split(/\r?\n/)) {
+      const stamps = [...rawLine.matchAll(/\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g)];
+      if (!stamps.length) { continue; }
+      const content = rawLine.replace(/\[[^\]]*\]/g, '').trim();
+      if (!content) { continue; }
+      for (const stamp of stamps) {
+        const minutes = Number(stamp[1]);
+        const seconds = Number(stamp[2]);
+        const fraction = stamp[3] ? Number(stamp[3]) / Math.pow(10, stamp[3].length) : 0;
+        lines.push({ time: minutes * 60 + seconds + fraction + offset, text: content });
+      }
+    }
+    lines.sort((a, b) => a.time - b.time);
+    return lines;
+  }
+
+  function normalizeName(value) {
+    return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s*[([].*?[)\]]\s*/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  async function fetchJson(url) {
+    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!response.ok) { throw new Error('HTTP ' + response.status); }
+    return response.json();
+  }
+
+  async function loadLyrics(track) {
+    const requestId = ++state.requestId;
+    state.lines = [];
+    state.active = -1;
+    state.translated = {};
+    state.translationState = 'idle';
+    const cached = lyricCache.get(track.key);
+    if (cached) {
+      state.lines = cached.lines;
+      state.lyricsStatus = cached.status;
+      renderLyrics();
+      updateActive(true);
+      return;
+    }
+    if (refs.status) { refs.status.textContent = 'Loading lyrics…'; }
+    try {
+      const params = new URLSearchParams({
+        track_name: track.title,
+        artist_name: track.artist,
+        duration: String(track.duration || '')
+      });
+      let record = null;
+      try {
+        record = await fetchJson('https://lrclib.net/api/get?' + params.toString());
+      } catch (error) {
+        record = null;
+      }
+      const titleMatches = record && normalizeName(record.trackName) === normalizeName(track.title);
+      const artistMatches = record && normalizeName(record.artistName).includes(normalizeName(track.artists[0] || track.artist));
+      const usable = record && (record.syncedLyrics || record.plainLyrics) && !record.instrumental;
+      if (!usable || !titleMatches || !artistMatches) {
+        const list = await fetchJson('https://lrclib.net/api/search?' + new URLSearchParams({
+          track_name: track.title,
+          artist_name: track.artist
+        }).toString());
+        const candidates = Array.isArray(list) ? list.filter((item) => item && !item.instrumental) : [];
+        const scored = candidates.map((item) => {
+          let score = 0;
+          if (normalizeName(item.trackName) === normalizeName(track.title)) { score += 4; }
+          if (normalizeName(item.artistName).includes(normalizeName(track.artists[0] || track.artist))) { score += 4; }
+          if (item.syncedLyrics) { score += 2; }
+          if (item.duration && track.duration) { score -= Math.min(3, Math.abs(item.duration - track.duration) / 10); }
+          return { item, score };
+        }).sort((a, b) => b.score - a.score);
+        record = scored.length ? scored[0].item : null;
+      }
+      if (requestId !== state.requestId) { return; }
+      if (!record) {
+        state.lines = [];
+        state.lyricsStatus = 'No lyrics were found for this track.';
+        lyricCache.set(track.key, { lines: [], status: state.lyricsStatus });
+        renderLyrics();
+        return;
+      }
+      if (record.instrumental) {
+        state.lines = [];
+        state.lyricsStatus = 'Instrumental track — no lyrics to display.';
+        lyricCache.set(track.key, { lines: [], status: state.lyricsStatus });
+        renderLyrics();
+        return;
+      }
+      if (record.syncedLyrics) {
+        state.lines = parseLrc(record.syncedLyrics);
+        state.lyricsStatus = 'Synced lyrics from LRCLIB';
+      } else if (record.plainLyrics) {
+        state.lines = record.plainLyrics.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+          .map((line, index) => ({ time: -1, index, text: line }));
+        state.lyricsStatus = 'Lyrics are not time-synced for this track';
+      }
+      if (!state.lines.length) {
+        state.lyricsStatus = 'No lyrics were found for this track.';
+      }
+      lyricCache.set(track.key, { lines: state.lines, status: state.lyricsStatus });
+      renderLyrics();
+      updateActive(true);
+      if (state.lang && state.mode !== 'off') { translateLines(); }
+    } catch (error) {
+      if (requestId !== state.requestId) { return; }
+      state.lines = [];
+      state.lyricsStatus = 'Lyrics are unavailable right now (' + error.message + ').';
+      renderLyrics();
+    }
+  }
+
+  function renderLyrics() {
+    if (!refs.lyrics) { return; }
+    refs.lyrics.style.setProperty('--sum-lyric-size', state.size + 'px');
+    refs.lyrics.classList.toggle('mode-translated', state.mode === 'translated');
+    refs.lyrics.classList.toggle('mode-both', state.mode === 'both');
+    if (refs.status) {
+      let status = state.lyricsStatus || 'Waiting for playback…';
+      if (state.mode !== 'off' && state.translationState === 'working') { status += ' · translating…'; }
+      if (state.mode !== 'off' && state.translationState === 'partial') { status += ' · some lines could not be translated'; }
+      refs.status.textContent = status;
+    }
+    refs.lyrics.textContent = '';
+    if (!state.lines.length) { return; }
+
+    const fragment = document.createDocumentFragment();
+    state.lines.forEach((line, index) => {
+      const row = document.createElement('div');
+      row.className = 'sum-line';
+      row.dataset.index = String(index);
+      const original = document.createElement('div');
+      original.className = 'sum-line-text';
+      original.textContent = line.text;
+      row.appendChild(original);
+      const translation = state.translated[line.text];
+      if (translation && state.mode !== 'off') {
+        const translated = document.createElement('div');
+        translated.className = 'sum-line-trans';
+        translated.textContent = translation;
+        row.appendChild(translated);
+      }
+      fragment.appendChild(row);
+    });
+    refs.lyrics.appendChild(fragment);
+    updateActive(true);
+  }
+
+  function updateActive(force) {
+    if (!refs.lyrics || !state.track) { return; }
+    const position = parseClock((document.querySelector('[data-testid="playback-position"]') || {}).textContent || '') || state.track.position;
+    let index = -1;
+    for (let i = 0; i < state.lines.length; i++) {
+      if (state.lines[i].time >= 0 && state.lines[i].time <= position + 0.15) { index = i; } else if (state.lines[i].time > position) { break; }
+    }
+    if (index === state.active && !force) { return; }
+    state.active = index;
+    const rows = refs.lyrics.querySelectorAll('.sum-line');
+    rows.forEach((row, i) => row.classList.toggle('is-active', i === index));
+    if (state.autoscroll && index >= 0 && rows[index]) {
+      rows[index].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }
+
+  async function translateText(text, lang) {
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' + encodeURIComponent(lang) + '&dt=t&q=' + encodeURIComponent(text);
+    const response = await fetch(url);
+    if (!response.ok) { throw new Error('HTTP ' + response.status); }
+    const data = await response.json();
+    return (data[0] || []).map((part) => part[0]).join('');
+  }
+
+  async function translateLines() {
+    if (!state.lines.length || state.mode === 'off') { return; }
+    const requestId = state.requestId;
+    const lang = state.lang;
+    const store = readSetting(LS.trans, {}) || {};
+    const targets = state.lines.filter((line) => line.text).slice(0, 120);
+    state.translationState = 'working';
+    let rendered = 0;
+    let changed = false;
+    for (const line of targets) {
+      if (requestId !== state.requestId) { return; }
+      const cacheKey = lang + '|' + line.text;
+      if (store[cacheKey]) {
+        state.translated[line.text] = store[cacheKey];
+        changed = true;
+        continue;
+      }
+      try {
+        const value = await translateText(line.text, lang);
+        if (value && value.trim() && value.trim().toLowerCase() !== line.text.trim().toLowerCase()) {
+          state.translated[line.text] = value;
+          store[cacheKey] = value;
+          changed = true;
+          rendered++;
+          if (rendered % 4 === 0) { renderLyrics(); }
+        }
+      } catch (error) {
+        state.translationState = 'error';
+      }
+      await new Promise((resolve) => setTimeout(resolve, 90));
+    }
+    if (requestId !== state.requestId) { return; }
+    const keys = Object.keys(store);
+    if (keys.length > 2500) {
+      for (const key of keys.slice(0, keys.length - 2500)) { delete store[key]; }
+    }
+    writeSetting(LS.trans, store);
+    state.translationState = state.translationState === 'error' ? 'partial' : 'ready';
+    if (changed) { renderLyrics(); }
+  }
+
+  function claimValue(entity, property) {
+    const claims = entity.claims && entity.claims[property];
+    if (!claims || !claims.length) { return null; }
+    const mainsnak = claims[0].mainsnak;
+    if (!mainsnak || !mainsnak.datavalue) { return null; }
+    return mainsnak.datavalue.value;
+  }
+
+  function formatDate(value) {
+    const time = value && value.time ? String(value.time).replace(/^\+/, '') : '';
+    const match = time.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) { return ''; }
+    if (value.precision && value.precision < 11) { return match[1]; }
+    return match[1] + '-' + match[2] + '-' + match[3];
+  }
+
+  async function resolveLabels(ids) {
+    const unique = [...new Set(ids.filter(Boolean))].slice(0, 30);
+    if (!unique.length) { return {}; }
+    const url = 'https://www.wikidata.org/w/api.php?action=wbgetentities&ids=' + encodeURIComponent(unique.join('|')) +
+      '&props=labels&languages=en&format=json&origin=*';
+    const data = await fetchJson(url);
+    const labels = {};
+    for (const id of unique) {
+      const entity = data.entities && data.entities[id];
+      labels[id] = entity && entity.labels && (entity.labels.en ? entity.labels.en.value : Object.values(entity.labels)[0] && Object.values(entity.labels)[0].value) || id;
+    }
+    return labels;
+  }
+
+  async function findWikipedia(name) {
+    const target = normalizeName(name);
+    const queries = [name, name + ' singer', name + ' musician', name + ' band'];
+    for (const query of queries) {
+      try {
+        const result = await fetchJson('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
+          encodeURIComponent(query) + '&srlimit=6&format=json&origin=*');
+        const hits = (result.query && result.query.search) || [];
+        const ordered = hits.slice().sort((a, b) => {
+          const rank = (title) => {
+            const normalized = normalizeName(title);
+            if (normalized === target) { return 0; }
+            if (normalized.indexOf(target) >= 0) { return 1; }
+            return 2;
+          };
+          return rank(a.title) - rank(b.title);
+        });
+        for (const hit of ordered.slice(0, 3)) {
+          if (normalizeName(hit.title).indexOf(target) < 0) { continue; }
+          try {
+            const summary = await fetchJson('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(hit.title));
+            if (summary && summary.type !== 'disambiguation' && summary.extract) {
+              return { title: hit.title, summary };
+            }
+          } catch (error) { }
+        }
+      } catch (error) { }
+    }
+    return null;
+  }
+
+  async function loadArtistForCurrent() {
+    const track = state.track;
+    if (!track) { return; }
+    if (state.artistFor === track.artists[0] && state.artist) { return; }
+    const name = track.artists[0] || track.artist;
+    if (!name) { return; }
+    state.artistFor = name;
+    const memory = artistCache.get(name);
+    if (memory) { state.artist = memory; renderArtist(); return; }
+    if (refs.artist) { refs.artist.innerHTML = '<div class="sum-status">Loading artist information…</div>'; }
+    try {
+      const wiki = await findWikipedia(name);
+      const summary = wiki ? wiki.summary : null;
+      let wikidata = null;
+      let labels = {};
+      try {
+        const search = await fetchJson('https://www.wikidata.org/w/api.php?action=wbsearchentities&search=' +
+          encodeURIComponent(name) + '&language=en&format=json&origin=*');
+        const qid = search.search && search.search[0] && search.search[0].id;
+        if (qid) {
+          const entityData = await fetchJson('https://www.wikidata.org/w/api.php?action=wbgetentities&ids=' + qid +
+            '&props=claims|labels&languages=en&format=json&origin=*');
+          const entity = entityData.entities && entityData.entities[qid];
+          if (entity) {
+            const ids = [];
+            for (const property of ['P19', 'P27', 'P106', 'P136', 'P264']) {
+              const value = claimValue(entity, property);
+              if (property === 'P106' && entity.claims.P106) {
+                for (const claim of entity.claims.P106.slice(0, 4)) {
+                  const id = claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value && claim.mainsnak.datavalue.value.id;
+                  if (id) { ids.push(id); }
+                }
+              } else if (value && value.id) { ids.push(value.id); }
+            }
+            labels = await resolveLabels(ids);
+            const links = [];
+            const website = claimValue(entity, 'P856');
+            if (website) { links.push({ label: 'Official website', url: website }); }
+            const x = claimValue(entity, 'P2002');
+            if (x) { links.push({ label: 'X / Twitter', url: 'https://x.com/' + x }); }
+            const instagram = claimValue(entity, 'P2009');
+            if (instagram) { links.push({ label: 'Instagram', url: 'https://instagram.com/' + instagram }); }
+            const facebook = claimValue(entity, 'P2013');
+            if (facebook) { links.push({ label: 'Facebook', url: 'https://facebook.com/' + facebook }); }
+            const youtube = claimValue(entity, 'P2397');
+            if (youtube) { links.push({ label: 'YouTube', url: 'https://youtube.com/channel/' + youtube }); }
+            const tiktok = claimValue(entity, 'P7085');
+            if (tiktok) { links.push({ label: 'TikTok', url: 'https://tiktok.com/@' + tiktok }); }
+            const musicbrainz = claimValue(entity, 'P434');
+            if (musicbrainz) { links.push({ label: 'MusicBrainz', url: 'https://musicbrainz.org/artist/' + musicbrainz }); }
+            if (summary && summary.content_urls && summary.content_urls.desktop) {
+              links.unshift({ label: 'Wikipedia', url: summary.content_urls.desktop.page });
+            }
+            const genreClaims = entity.claims.P136 || [];
+            const genres = genreClaims.slice(0, 3).map((claim) => {
+              const id = claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value && claim.mainsnak.datavalue.value.id;
+              return id ? labels[id] : null;
+            }).filter(Boolean);
+            const facts = [];
+            const birthName = claimValue(entity, 'P1477');
+            if (birthName && birthName.text) { facts.push(['Birth name', birthName.text]); }
+            const birthDate = claimValue(entity, 'P569');
+            if (birthDate) { facts.push(['Born', formatDate(birthDate)]); }
+            const birthPlace = claimValue(entity, 'P19');
+            if (birthPlace && birthPlace.id && labels[birthPlace.id]) { facts.push(['Birthplace', labels[birthPlace.id]]); }
+            const country = claimValue(entity, 'P27');
+            if (country && country.id && labels[country.id]) { facts.push(['Country', labels[country.id]]); }
+            if (genres.length) { facts.push(['Genres', genres.join(', ')]); }
+            const occupations = (entity.claims.P106 || []).slice(0, 3).map((claim) => {
+              const id = claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value && claim.mainsnak.datavalue.value.id;
+              return id ? labels[id] : null;
+            }).filter(Boolean);
+            if (occupations.length) { facts.push(['Profession', occupations.join(', ')]); }
+            const label = claimValue(entity, 'P264');
+            if (label && label.id && labels[label.id]) { facts.push(['Label', labels[label.id]]); }
+            wikidata = { facts, links, qid };
+          }
+        }
+      } catch (error) {
+        wikidata = null;
+      }
+
+      const artist = {
+        name,
+        summary: summary && summary.extract ? summary.extract : '',
+        image: summary && summary.thumbnail ? summary.thumbnail.source : '',
+        facts: wikidata ? wikidata.facts : [],
+        links: wikidata ? wikidata.links : [],
+        wikiUrl: summary && summary.content_urls && summary.content_urls.desktop ? summary.content_urls.desktop.page : ''
+      };
+      artistCache.set(name, artist);
+      if (state.artistFor !== name) { return; }
+      state.artist = artist;
+      state.artistStatus = '';
+      renderArtist();
+    } catch (error) {
+      if (state.artistFor !== name) { return; }
+      state.artist = { name, summary: '', facts: [], links: [], error: error.message };
+      renderArtist();
+    }
+  }
+
+  function renderArtist() {
+    if (!refs.artist) { return; }
+    const artist = state.artist;
+    refs.artist.textContent = '';
+    if (!artist) {
+      refs.artist.innerHTML = '<div class="sum-status">Open a track to see verified artist information.</div>';
+      return;
+    }
+    const hero = document.createElement('div');
+    hero.className = 'sum-artist-hero';
+    if (artist.image) {
+      const image = document.createElement('img');
+      image.className = 'sum-artist-image';
+      image.src = artist.image;
+      image.alt = artist.name;
+      image.loading = 'lazy';
+      hero.appendChild(image);
+    }
+    const heading = document.createElement('div');
+    heading.className = 'sum-artist-name';
+    heading.textContent = artist.name;
+    hero.appendChild(heading);
+    refs.artist.appendChild(hero);
+
+    if (artist.summary) {
+      const paragraph = document.createElement('p');
+      paragraph.className = 'sum-summary';
+      paragraph.textContent = artist.summary;
+      refs.artist.appendChild(paragraph);
+    } else {
+      const paragraph = document.createElement('p');
+      paragraph.className = 'sum-status';
+      paragraph.textContent = 'No verified biography was found for this artist.';
+      refs.artist.appendChild(paragraph);
+    }
+
+    if (artist.facts && artist.facts.length) {
+      const list = document.createElement('div');
+      list.className = 'sum-facts';
+      for (const [label, value] of artist.facts) {
+        if (!value) { continue; }
+        const row = document.createElement('div');
+        row.className = 'sum-fact';
+        const key = document.createElement('span');
+        key.className = 'sum-fact-key';
+        key.textContent = label;
+        const val = document.createElement('span');
+        val.className = 'sum-fact-value';
+        val.textContent = value;
+        row.appendChild(key);
+        row.appendChild(val);
+        list.appendChild(row);
+      }
+      refs.artist.appendChild(list);
+    }
+
+    if (artist.links && artist.links.length) {
+      const links = document.createElement('div');
+      links.className = 'sum-links';
+      for (const link of artist.links) {
+        const anchor = document.createElement('a');
+        anchor.className = 'sum-link';
+        anchor.href = link.url;
+        anchor.target = '_blank';
+        anchor.rel = 'noreferrer noopener';
+        anchor.textContent = link.label;
+        links.appendChild(anchor);
+      }
+      refs.artist.appendChild(links);
+    }
+
+    const note = document.createElement('div');
+    note.className = 'sum-note';
+    note.textContent = 'Sources: Wikipedia, Wikidata and Spotify. Only documented facts are shown.';
+    refs.artist.appendChild(note);
+  }
+
+  function loop() {
+    syncTrack();
+    if (state.open && state.tab === 'lyrics' && state.lines.length) {
+      updateActive(false);
+    }
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && event.shiftKey && (event.key === 'U' || event.key === 'u')) {
+      event.preventDefault();
+      setOpen(!state.open);
+    }
+  });
+
+  mount();
+  syncTrack();
+  const timer = setInterval(loop, 700);
+  window.__SUM_TIMER__ = timer;
+  window.__SUM_REFRESH__ = () => {
+    installSheet('base', CSS);
+    installSheet('custom', sanitizeCss(readSetting(LS.css, '')));
+    applyTheme();
+    syncTrack();
+  };
+
+  return 'ok';
+})();
