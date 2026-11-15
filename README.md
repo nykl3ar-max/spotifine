@@ -157,6 +157,7 @@ Data sources:
 - **Lyrics depend on LRCLIB coverage.** Obscure tracks, brand-new releases and some regional versions may be missing or unsynchronized.
 - **Translation is machine translation.** Google's public endpoint is unofficial, rate limited and has no service guarantee.
 - **Artist data is English-first** and only shows documented facts. Missing information is shown as unavailable rather than invented.
+- **Artist matching** resolves names through Wikidata and only accepts entities whose occupation or group type is music-related. Exact but unrelated articles (for example *Bushido*, the samurai code, instead of the German rapper) are ignored, and the tab shows no biography rather than the wrong one.
 - **No DRM changes, no audio capture, no account changes.**
 - **Nothing is uploaded** except the queries needed for lyrics, translation and artist data. No analytics, no telemetry.
 

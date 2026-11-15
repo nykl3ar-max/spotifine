@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.6.1';
+  const VERSION = '3.6.5';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -1117,30 +1117,105 @@
     return labels;
   }
 
+  const MUSIC_OCCUPATIONS = new Set([
+    'Q177220', 'Q2252262', 'Q639669', 'Q48820564', 'Q753110', 'Q36834', 'Q183945',
+    'Q1622272', 'Q855091', 'Q486748', 'Q386854', 'Q584301', 'Q158852', 'Q12800682'
+  ]);
+
+  const MUSIC_GROUPS = new Set([
+    'Q215380', 'Q2088357', 'Q10648343', 'Q641066', 'Q216337', 'Q5741069', 'Q1143604', 'Q42998'
+  ]);
+
+  const MUSIC_DESCRIPTION = /\b(singer|rapper|musician|band|duo|trio|songwriter|composer|producer|disc jockey|dj|hip[- ]hop|pop|rock|metal|jazz|soul|orchestra|choir|soundtrack|recording artist|vocalist)\b/i;
+
+  function entityValues(entity, property) {
+    const claims = entity && entity.claims && entity.claims[property];
+    if (!claims) { return []; }
+    return claims
+      .map((claim) => claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value && claim.mainsnak.datavalue.value.id)
+      .filter(Boolean);
+  }
+
+  function entityDescription(entity) {
+    return entity && entity.descriptions && entity.descriptions.en ? entity.descriptions.en.value : '';
+  }
+
+  function isMusicEntity(entity) {
+    if (!entity) { return false; }
+    const occupations = entityValues(entity, 'P106');
+    const instances = entityValues(entity, 'P31');
+    if (occupations.some((id) => MUSIC_OCCUPATIONS.has(id))) { return true; }
+    if (instances.some((id) => MUSIC_GROUPS.has(id)) || occupations.some((id) => MUSIC_GROUPS.has(id))) { return true; }
+    const description = entityDescription(entity);
+    if (MUSIC_DESCRIPTION.test(description) && !/samurai|code of|philosophy|concept/i.test(description)) { return true; }
+    return false;
+  }
+
+  async function findMusicEntity(name) {
+    const cleaned = String(name || '')
+      .replace(/\s*[([].*?[)\]]\s*/g, ' ')
+      .replace(/\s*-\s*topic\s*$/i, '')
+      .replace(/\s*vevo\s*$/i, '')
+      .trim();
+    const target = normalizeName(cleaned || name);
+    const searchName = cleaned || name;
+    try {
+      const search = await fetchJson('https://www.wikidata.org/w/api.php?action=wbsearchentities&search=' +
+        encodeURIComponent(searchName) + '&language=en&type=item&limit=10&format=json&origin=*');
+      const ids = ((search.search || []).map((item) => item.id).filter(Boolean)).slice(0, 10);
+      if (!ids.length) { return null; }
+      const data = await fetchJson('https://www.wikidata.org/w/api.php?action=wbgetentities&ids=' + ids.join('|') +
+        '&props=claims|descriptions|labels|sitelinks&languages=en&sitefilter=enwiki&format=json&origin=*');
+      let best = null;
+      for (const id of ids) {
+        const entity = data.entities && data.entities[id];
+        if (!entity) { continue; }
+        const label = entity.labels && entity.labels.en ? entity.labels.en.value : '';
+        const normalized = normalizeName(label);
+        if (normalized !== target && normalized.indexOf(target) < 0) { continue; }
+        if (!isMusicEntity(entity)) { continue; }
+        const title = entity.sitelinks && entity.sitelinks.enwiki ? entity.sitelinks.enwiki.title : '';
+        if (!title) { continue; }
+        const description = entityDescription(entity);
+        let score = 0;
+        if (normalized === target) { score += 5; }
+        if (entityValues(entity, 'P106').some((value) => MUSIC_OCCUPATIONS.has(value))) { score += 4; }
+        if (entityValues(entity, 'P31').some((value) => MUSIC_GROUPS.has(value))) { score += 3; }
+        if (MUSIC_DESCRIPTION.test(description)) { score += 2; }
+        if (/samurai|code of|philosophy|concept/i.test(description)) { score -= 10; }
+        if (!best || score > best.score) { best = { score, title, qid: id, entity }; }
+      }
+      return best;
+    } catch (error) {
+      return null;
+    }
+  }
+
   async function findWikipedia(name) {
+    const music = await findMusicEntity(name);
+    if (music) {
+      try {
+        const summary = await fetchJson('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(music.title));
+        if (summary && summary.type !== 'disambiguation' && summary.extract) {
+          return { title: music.title, summary, qid: music.qid, entity: music.entity };
+        }
+      } catch (error) { }
+    }
     const target = normalizeName(name);
-    const queries = [name, name + ' singer', name + ' musician', name + ' band'];
+    const queries = [name + ' rapper', name + ' singer', name + ' musician', name + ' band'];
     for (const query of queries) {
       try {
         const result = await fetchJson('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
-          encodeURIComponent(query) + '&srlimit=6&format=json&origin=*');
+          encodeURIComponent(query) + '&srlimit=8&format=json&origin=*');
         const hits = (result.query && result.query.search) || [];
-        const ordered = hits.slice().sort((a, b) => {
-          const rank = (title) => {
-            const normalized = normalizeName(title);
-            if (normalized === target) { return 0; }
-            if (normalized.indexOf(target) >= 0) { return 1; }
-            return 2;
-          };
-          return rank(a.title) - rank(b.title);
-        });
-        for (const hit of ordered.slice(0, 3)) {
+        for (const hit of hits) {
           if (normalizeName(hit.title).indexOf(target) < 0) { continue; }
           try {
             const summary = await fetchJson('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(hit.title));
-            if (summary && summary.type !== 'disambiguation' && summary.extract) {
-              return { title: hit.title, summary };
-            }
+            const description = summary && summary.description ? summary.description : '';
+            if (!summary || summary.type === 'disambiguation' || !summary.extract) { continue; }
+            if (!MUSIC_DESCRIPTION.test(description) || /samurai|code of|philosophy/i.test(description)) { continue; }
+            return { title: hit.title, summary };
           } catch (error) { }
         }
       } catch (error) { }
@@ -1164,14 +1239,26 @@
       let wikidata = null;
       let labels = {};
       try {
-        const search = await fetchJson('https://www.wikidata.org/w/api.php?action=wbsearchentities&search=' +
-          encodeURIComponent(name) + '&language=en&format=json&origin=*');
-        const qid = search.search && search.search[0] && search.search[0].id;
-        if (qid) {
-          const entityData = await fetchJson('https://www.wikidata.org/w/api.php?action=wbgetentities&ids=' + qid +
-            '&props=claims|labels&languages=en&format=json&origin=*');
-          const entity = entityData.entities && entityData.entities[qid];
-          if (entity) {
+        let qid = wiki && wiki.qid ? wiki.qid : '';
+        let entity = wiki && wiki.entity ? wiki.entity : null;
+        if (!entity) {
+          const search = await fetchJson('https://www.wikidata.org/w/api.php?action=wbsearchentities&search=' +
+            encodeURIComponent(name) + '&language=en&type=item&limit=6&format=json&origin=*');
+          const searchIds = ((search.search || []).map((item) => item.id).filter(Boolean)).slice(0, 6);
+          if (searchIds.length) {
+            const entityData = await fetchJson('https://www.wikidata.org/w/api.php?action=wbgetentities&ids=' + searchIds.join('|') +
+              '&props=claims|descriptions&languages=en&format=json&origin=*');
+            for (const candidateId of searchIds) {
+              const candidate = entityData.entities && entityData.entities[candidateId];
+              if (candidate && isMusicEntity(candidate)) {
+                entity = candidate;
+                qid = candidateId;
+                break;
+              }
+            }
+          }
+        }
+        if (entity) {
             const ids = [];
             for (const property of ['P19', 'P27', 'P106', 'P136', 'P264']) {
               const value = claimValue(entity, property);
@@ -1224,7 +1311,6 @@
             const label = claimValue(entity, 'P264');
             if (label && label.id && labels[label.id]) { facts.push(['Label', labels[label.id]]); }
             wikidata = { facts, links, qid };
-          }
         }
       } catch (error) {
         wikidata = null;
@@ -1432,6 +1518,7 @@
     translate: window.__SUM_TRANSLATE__,
     render: renderLyrics,
     linkIcon: iconForLink,
+    lookupArtist: (name) => findMusicEntity(name).then((match) => match ? { qid: match.qid, title: match.title, description: entityDescription(match.entity) } : null),
     refresh: window.__SUM_REFRESH__
   };
 
