@@ -30,6 +30,14 @@ html[data-sum-theme] .encore-dark-theme [role="dialog"] {
   background-color: var(--sum-bg-elevated, #1f1f1f);
 }
 
+html[data-sum-theme] #main-view,
+html[data-sum-theme] #Desktop_PanelContainer_Id,
+html[data-sum-theme] #Desktop_LeftSidebar_Id,
+html[data-sum-theme] [data-testid="global-nav-bar"],
+html[data-sum-theme] [data-testid="now-playing-bar"] {
+  background-color: var(--sum-bg-base, #121212) !important;
+}
+
 html[data-sum-theme] [role="menu"],
 html[data-sum-theme] [role="dialog"],
 html[data-sum-theme] [role="listbox"] {
@@ -676,6 +684,93 @@ html[data-sum-theme] [data-testid="search-input"] {
 
 #sum-toggle.sum-fallback:hover {
   color: #fff;
+}
+
+.sum-surfaces {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.sum-surface {
+  flex: 1;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-subdued, #b3b3b3);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.sum-surface:hover {
+  color: var(--text-base, #fff);
+}
+
+.sum-surface.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: transparent;
+  color: var(--text-base, #fff);
+}
+
+/* OLED: collapse every themed surface to pure black for OLED panels */
+html[data-sum-effect="oled"] {
+  --sum-bg-base: #000000 !important;
+  --sum-bg-elevated: #000000 !important;
+  --sum-bg-elevated-highlight: #0a0a0a !important;
+  --sum-bg-tinted: #000000 !important;
+  --sum-bg-tinted-highlight: #050505 !important;
+  background-color: #000000 !important;
+}
+
+html[data-sum-effect="oled"] #main-view,
+html[data-sum-effect="oled"] #Desktop_PanelContainer_Id,
+html[data-sum-effect="oled"] #Desktop_LeftSidebar_Id,
+html[data-sum-effect="oled"] [data-testid="global-nav-bar"],
+html[data-sum-effect="oled"] [data-testid="now-playing-bar"],
+html[data-sum-effect="oled"] [role="menu"],
+html[data-sum-effect="oled"] [role="dialog"],
+html[data-sum-effect="oled"] [role="listbox"] {
+  background-color: #000000 !important;
+  backdrop-filter: none;
+}
+
+/* Glass: translucent surfaces over a themed gradient backdrop */
+html[data-sum-effect="glass"] {
+  background-image:
+    radial-gradient(1100px 700px at 10% 5%, color-mix(in srgb, var(--sum-accent) 32%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 90% 95%, color-mix(in srgb, var(--sum-accent) 20%, transparent), transparent 62%),
+    linear-gradient(150deg, color-mix(in srgb, var(--sum-bg-base) 72%, #000000), var(--sum-bg-base)) !important;
+  background-attachment: fixed;
+}
+
+html[data-sum-effect="glass"] body {
+  background-color: transparent !important;
+}
+
+html[data-sum-effect="glass"] #main-view,
+html[data-sum-effect="glass"] #Desktop_PanelContainer_Id,
+html[data-sum-effect="glass"] #Desktop_LeftSidebar_Id,
+html[data-sum-effect="glass"] [data-testid="global-nav-bar"],
+html[data-sum-effect="glass"] [data-testid="now-playing-bar"] {
+  background-color: color-mix(in srgb, var(--sum-bg-base) 55%, transparent) !important;
+  backdrop-filter: blur(26px) saturate(1.3);
+}
+
+html[data-sum-effect="glass"] [data-encore-id="card"] {
+  background-color: color-mix(in srgb, var(--sum-bg-elevated) 45%, transparent) !important;
+  backdrop-filter: blur(12px);
+  border-radius: 8px;
+}
+
+html[data-sum-effect="glass"] [role="menu"],
+html[data-sum-effect="glass"] [role="dialog"],
+html[data-sum-effect="glass"] [role="listbox"] {
+  background-color: color-mix(in srgb, var(--sum-bg-elevated) 72%, transparent) !important;
+  backdrop-filter: blur(28px) saturate(1.3);
 }
 
 @media (prefers-reduced-motion: reduce) {

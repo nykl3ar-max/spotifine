@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.6.5';
+  const VERSION = '3.7.0';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -22,6 +22,7 @@
     css: 'sum.customCss',
     html: 'sum.customHtml',
     custom: 'sum.customPalette',
+    effect: 'sum.surface',
     open: 'sum.open',
     tab: 'sum.tab',
     scroll: 'sum.autoscroll',
@@ -64,7 +65,7 @@
       vars: { '--background-base': '#0b0b10', '--background-elevated-base': '#15151d', '--background-elevated-highlight': '#1c1c26', '--background-tinted-base': '#131319', '--background-tinted-highlight': '#1b1b25', '--text-base': '#f5f5f7', '--text-subdued': '#a5a5b4', '--essential-base': '#8b5cf6', '--essential-bright-accent': '#a78bfa' }
     },
     {
-      id: 'amoled', name: 'AMOLED', accent: '#00e5a0',
+      id: 'amoled', name: 'AMOLED', accent: '#00e5a0', effect: 'oled',
       vars: { '--background-base': '#000000', '--background-elevated-base': '#0a0a0a', '--background-elevated-highlight': '#141414', '--background-tinted-base': '#070707', '--background-tinted-highlight': '#101010', '--text-base': '#ffffff', '--text-subdued': '#9a9a9a', '--essential-base': '#00e5a0', '--essential-bright-accent': '#5effc9' }
     },
     {
@@ -84,6 +85,14 @@
       vars: { '--background-base': '#06110f', '--background-elevated-base': '#0d201c', '--background-elevated-highlight': '#132b25', '--background-tinted-base': '#0a1916', '--background-tinted-highlight': '#10241f', '--text-base': '#ecfdf5', '--text-subdued': '#93b8ab', '--essential-base': '#34d399', '--essential-bright-accent': '#6ee7b7' }
     },
     {
+      id: 'oled', name: 'OLED', accent: '#1ed760', effect: 'oled',
+      vars: { '--background-base': '#000000', '--background-elevated-base': '#000000', '--background-elevated-highlight': '#0a0a0a', '--background-tinted-base': '#000000', '--background-tinted-highlight': '#050505', '--text-base': '#ffffff', '--text-subdued': '#a7a7a7', '--essential-base': '#1ed760', '--essential-bright-accent': '#1ed760' }
+    },
+    {
+      id: 'glass', name: 'Glass', accent: '#7dd3fc', effect: 'glass',
+      vars: { '--background-base': '#0b0b14', '--background-elevated-base': '#161622', '--background-elevated-highlight': '#202033', '--background-tinted-base': '#10101c', '--background-tinted-highlight': '#1b1b2b', '--text-base': '#f2f5ff', '--text-subdued': '#aab1c9', '--essential-base': '#7dd3fc', '--essential-bright-accent': '#7dd3fc' }
+    },
+    {
       id: 'custom', name: 'Custom', accent: '#1ed760',
       vars: { '--background-base': '#121212', '--background-elevated-base': '#1f1f1f', '--background-elevated-highlight': '#2a2a2a', '--background-tinted-base': '#181818', '--background-tinted-highlight': '#242424', '--text-base': '#ffffff', '--text-subdued': '#b3b3b3', '--essential-base': '#1ed760', '--essential-bright-accent': '#1ed760' }
     }
@@ -93,6 +102,7 @@
     tab: readSetting(LS.tab, 'lyrics'),
     theme: readSetting(LS.theme, 'spotify'),
     accent: readSetting(LS.accent, ''),
+    effect: readSetting(LS.effect, ''),
     custom: readSetting(LS.custom, { base: '#121212', elevated: '#1f1f1f', text: '#ffffff', accent: '#1ed760' }),
     lang: readSetting(LS.lang, 'en'),
     mode: readSetting(LS.mode, 'both'),
@@ -215,6 +225,12 @@
         <section class="sum-section" data-sum-section="style">
           <div class="sum-label">Theme</div>
           <div class="sum-themes" id="sum-themes"></div>
+          <div class="sum-label">Surface</div>
+          <div class="sum-surfaces" id="sum-surfaces">
+            <button type="button" class="sum-surface" data-sum-effect="solid">Solid</button>
+            <button type="button" class="sum-surface" data-sum-effect="glass">Glass</button>
+            <button type="button" class="sum-surface" data-sum-effect="oled">OLED</button>
+          </div>
           <div class="sum-row">
             <span class="sum-label">Accent</span>
             <input id="sum-accent" type="color" class="sum-color" aria-label="Accent colour">
@@ -294,6 +310,7 @@
       lyrics: root.querySelector('#sum-lyrics'),
       artist: root.querySelector('#sum-artist'),
       themes: root.querySelector('#sum-themes'),
+      surfaces: root.querySelector('#sum-surfaces'),
       accent: root.querySelector('#sum-accent'),
       base: root.querySelector('#sum-base'),
       baseHex: root.querySelector('#sum-base-hex'),
@@ -330,8 +347,10 @@
       button.addEventListener('click', () => {
         state.theme = theme.id;
         state.accent = '';
+        state.effect = theme.effect || 'solid';
         writeSetting(LS.theme, theme.id);
         writeSetting(LS.accent, '');
+        writeSetting(LS.effect, state.effect);
         refs.accent.value = theme.accent;
         applyTheme();
       });
@@ -369,10 +388,20 @@
       writeSetting(LS.accent, state.accent);
       applyTheme();
     });
+    if (refs.surfaces) {
+      refs.surfaces.querySelectorAll('[data-sum-effect]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.effect = button.dataset.sumEffect;
+          writeSetting(LS.effect, state.effect);
+          applyTheme();
+        });
+      });
+    }
     refs.themeReset.addEventListener('click', () => {
       const theme = THEMES[0];
       state.theme = theme.id;
       state.accent = '';
+      state.effect = 'solid';
       state.custom = {
         base: theme.vars['--background-base'],
         elevated: theme.vars['--background-elevated-base'],
@@ -381,6 +410,7 @@
       };
       writeSetting(LS.theme, state.theme);
       writeSetting(LS.accent, '');
+      writeSetting(LS.effect, state.effect);
       writeSetting(LS.custom, state.custom);
       applyTheme();
     });
@@ -633,6 +663,7 @@
     const theme = themeById(state.theme);
     const vars = theme.id === 'custom' ? customVars(state.custom) : theme.vars;
     const accent = state.accent || theme.accent;
+    const effect = state.effect || theme.effect || 'solid';
     const root = document.documentElement;
     for (const [name, value] of Object.entries(vars)) {
       root.style.setProperty(name, value);
@@ -648,7 +679,13 @@
     root.style.setProperty('--sum-text', vars['--text-base']);
     root.style.setProperty('--sum-text-subdued', vars['--text-subdued']);
     root.setAttribute('data-sum-theme', theme.id);
+    root.setAttribute('data-sum-effect', effect);
     syncThemeFields(vars, accent);
+    if (refs.surfaces) {
+      refs.surfaces.querySelectorAll('[data-sum-effect]').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.sumEffect === effect);
+      });
+    }
     if (refs.themes) {
       refs.themes.querySelectorAll('.sum-theme').forEach((button) => {
         button.classList.toggle('is-active', button.dataset.sumTheme === theme.id);
