@@ -13,7 +13,7 @@
 #>
 
 $ErrorActionPreference = 'Stop'
-$Version = '3.0.1'
+$Version = '3.0.2'
 $Repo = 'nykl3ar-max/spotify-ultimate-mod-injector'
 $Branch = 'main'
 $BaseUrl = "https://raw.githubusercontent.com/$Repo/$Branch"
@@ -70,7 +70,7 @@ foreach ($file in $Files) {
     if (-not (Test-Path -LiteralPath $parent)) {
         New-Item -ItemType Directory -Path $parent -Force | Out-Null
     }
-    $url = "$BaseUrl/$file"
+    $url = "$BaseUrl/$file?v=$Version"
     $downloaded = $false
     for ($attempt = 0; $attempt -lt 3 -and -not $downloaded; $attempt++) {
         try {

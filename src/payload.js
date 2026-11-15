@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.0.1';
+  const VERSION = '3.0.2';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && document.getElementById('sum-root')) {
@@ -275,7 +275,10 @@
       writeSetting(LS.accent, state.accent);
       applyTheme();
     });
-    refs.cssApply.addEventListener('click', applyCustomCss);
+    refs.cssApply.addEventListener('click', () => {
+      writeSetting(LS.css, refs.css.value);
+      applyCustomCss(refs.css.value);
+    });
     refs.cssReset.addEventListener('click', () => {
       refs.css.value = '';
       writeSetting(LS.css, '');
@@ -312,7 +315,7 @@
   }
 
   function applyCustomCss(value) {
-    const css = arguments.length ? value : refs.css.value;
+    const css = typeof value === 'string' ? value : refs.css.value;
     installSheet('custom', sanitizeCss(css));
   }
 
