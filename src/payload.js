@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.5.0';
+  const VERSION = '3.6.1';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -800,6 +800,90 @@
     return response.json();
   }
 
+  const IMAGE_BLOCKLIST = /(logo|icon|signature|wordmark|symbol|seal|coat[ _]of[ _]arms|flag|map|chart|award|cover|album|single|poster|screenshot|commons|wikimedia|wikipedia|edit|question|ambox|padlock|barnstar|stub|placeholder|avatar|default)/i;
+
+  function usableImageTitle(title) {
+    const value = String(title || '');
+    return /\.(jpe?g|png|webp)$/i.test(value) && !IMAGE_BLOCKLIST.test(value);
+  }
+
+  function imageName(url) {
+    try {
+      const path = decodeURIComponent(String(url || '').split('?')[0]);
+      return path.split('/').pop().toLowerCase().replace(/^\d+px-/, '');
+    } catch (error) { return String(url || ''); }
+  }
+
+  function commonsMatches(filename, artist) {
+    const tokens = normalizeName(artist).split(' ').filter((token) => token.length > 2);
+    if (!tokens.length) { return true; }
+    const name = normalizeName(String(filename || '').replace(/\.[a-z0-9]+$/i, ''));
+    const hits = tokens.filter((token) => name.indexOf(token) >= 0).length;
+    return hits >= Math.max(1, Math.ceil(tokens.length / 2));
+  }
+
+  async function fetchArtistImages(title, name) {
+    const images = [];
+    const seen = new Set();
+    const add = (url) => {
+      if (!url) { return; }
+      const key = imageName(url);
+      if (!key || seen.has(key)) { return; }
+      seen.add(key);
+      images.push(url);
+    };
+    if (title) {
+      try {
+        const data = await fetchJson('https://en.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(title) +
+          '&prop=images&imlimit=60&format=json&origin=*');
+        const page = Object.values((data.query && data.query.pages) || {})[0];
+        const files = ((page && page.images) || []).map((item) => item.title).filter(usableImageTitle).slice(0, 12);
+        if (files.length) {
+          const info = await fetchJson('https://en.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(files.join('|')) +
+            '&prop=imageinfo&iiprop=url&iiurlwidth=520&format=json&origin=*');
+          Object.values((info.query && info.query.pages) || {}).forEach((entry) => {
+            const item = entry.imageinfo && entry.imageinfo[0];
+            if (item) { add(item.thumburl || item.url); }
+          });
+        }
+      } catch (error) { }
+    }
+    try {
+      const search = await fetchJson('https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=' +
+        encodeURIComponent(name) + '&gsrnamespace=6&gsrlimit=24&prop=imageinfo&iiprop=url&iiurlwidth=520&format=json&origin=*');
+      Object.values((search.query && search.query.pages) || {})
+        .filter((entry) => usableImageTitle(entry.title) && commonsMatches(entry.title, name))
+        .forEach((entry) => {
+          const item = entry.imageinfo && entry.imageinfo[0];
+          if (item) { add(item.thumburl || item.url); }
+        });
+    } catch (error) { }
+    return images.slice(0, 10);
+  }
+
+  const LINK_ICONS = {
+    wikipedia: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.4 3h4.2c.8 0 1.4.6 1.4 1.4v8.2c-.4-.4-.9-.6-1.4-.6H2.4zM13.6 3H9.4c-.8 0-1.4.6-1.4 1.4v8.2c.4-.4.9-.6 1.4-.6h4.2z"/></svg>',
+    website: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.7" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2.4 8h11.2M8 2.3c2 1.8 2 9.6 0 11.4M8 2.3c-2 1.8-2 9.6 0 11.4" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>',
+    x: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 2h3l3 4 3-4h2.6L9.1 7.9 13.8 14h-3l-3.1-4.2L4.4 14H1.8l4.6-6z"/></svg>',
+    instagram: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.1" y="2.1" width="11.8" height="11.8" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2.8" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="11.6" cy="4.4" r="0.9"/></svg>',
+    facebook: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.1 14V8.8h1.8l.3-2H9.1V5.4c0-.6.2-1 1-1h1V2.5c-.2 0-.8-.1-1.6-.1-1.6 0-2.7 1-2.7 2.8v1.6H5v2h1.8V14z"/></svg>',
+    youtube: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M14.3 5.3c-.1-.6-.6-1.1-1.2-1.2C12 3.8 8 3.8 8 3.8s-4 0-5.1.3c-.6.1-1.1.6-1.2 1.2C1.5 6.3 1.5 8 1.5 8s0 1.7.2 2.7c.1.6.6 1.1 1.2 1.2 1.1.3 5.1.3 5.1.3s4 0 5.1-.3c.6-.1 1.1-.6 1.2-1.2.2-1 .2-2.7.2-2.7s0-1.7-.2-2.7zM6.6 10.2V5.8L10.4 8z"/></svg>',
+    tiktok: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.9 2h1.8c.1.9.6 1.7 1.4 2.2.4.2.8.3 1.2.3v1.9c-.9 0-1.8-.3-2.5-.8v4.2a3.5 3.5 0 1 1-3.5-3.5c.2 0 .4 0 .6.1v2a1.6 1.6 0 1 0 1 1.4z"/></svg>',
+    musicbrainz: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 11.3V4.4l5.8-1.1v6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="4.6" cy="11.8" r="1.7"/><circle cx="10.4" cy="10.4" r="1.7"/></svg>'
+  };
+
+  function iconForLink(label) {
+    const value = String(label || '').toLowerCase();
+    if (value.indexOf('instagram') >= 0) { return LINK_ICONS.instagram; }
+    if (value.indexOf('twitter') >= 0 || value.indexOf('x /') >= 0) { return LINK_ICONS.x; }
+    if (value.indexOf('facebook') >= 0) { return LINK_ICONS.facebook; }
+    if (value.indexOf('youtube') >= 0) { return LINK_ICONS.youtube; }
+    if (value.indexOf('tiktok') >= 0) { return LINK_ICONS.tiktok; }
+    if (value.indexOf('wikipedia') >= 0) { return LINK_ICONS.wikipedia; }
+    if (value.indexOf('musicbrainz') >= 0) { return LINK_ICONS.musicbrainz; }
+    return LINK_ICONS.website;
+  }
+
   async function loadLyrics(track) {
     const requestId = ++state.requestId;
     state.lines = [];
@@ -1146,10 +1230,18 @@
         wikidata = null;
       }
 
+      const commons = await fetchArtistImages(wiki ? wiki.title : '', name);
+      const images = [];
+      if (summary && summary.thumbnail && summary.thumbnail.source) { images.push(summary.thumbnail.source); }
+      commons.forEach((url) => {
+        if (!images.some((existing) => imageName(existing) === imageName(url))) { images.push(url); }
+      });
+
       const artist = {
         name,
         summary: summary && summary.extract ? summary.extract : '',
-        image: summary && summary.thumbnail ? summary.thumbnail.source : '',
+        image: images[0] || '',
+        images,
         facts: wikidata ? wikidata.facts : [],
         links: wikidata ? wikidata.links : [],
         wikiUrl: summary && summary.content_urls && summary.content_urls.desktop ? summary.content_urls.desktop.page : ''
@@ -1176,13 +1268,68 @@
     }
     const hero = document.createElement('div');
     hero.className = 'sum-artist-hero';
-    if (artist.image) {
+    const images = artist.images && artist.images.length ? artist.images : (artist.image ? [artist.image] : []);
+    if (images.length) {
+      const gallery = document.createElement('div');
+      gallery.className = 'sum-gallery';
       const image = document.createElement('img');
       image.className = 'sum-artist-image';
-      image.src = artist.image;
       image.alt = artist.name;
       image.loading = 'lazy';
-      hero.appendChild(image);
+      gallery.appendChild(image);
+
+      let index = 0;
+      const thumbs = [];
+      const counter = document.createElement('span');
+      counter.className = 'sum-gallery-count';
+
+      const show = (next) => {
+        index = ((next % images.length) + images.length) % images.length;
+        image.src = images[index];
+        counter.textContent = (index + 1) + ' / ' + images.length;
+        thumbs.forEach((thumb, position) => thumb.classList.toggle('is-active', position === index));
+      };
+
+      if (images.length > 1) {
+        const prev = document.createElement('button');
+        prev.type = 'button';
+        prev.className = 'sum-gallery-nav sum-gallery-prev';
+        prev.setAttribute('aria-label', 'Previous image');
+        prev.textContent = '\u2039';
+        prev.addEventListener('click', () => show(index - 1));
+
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.className = 'sum-gallery-nav sum-gallery-next';
+        next.setAttribute('aria-label', 'Next image');
+        next.textContent = '\u203a';
+        next.addEventListener('click', () => show(index + 1));
+
+        gallery.appendChild(prev);
+        gallery.appendChild(next);
+        gallery.appendChild(counter);
+
+        const strip = document.createElement('div');
+        strip.className = 'sum-thumbs';
+        images.forEach((source, position) => {
+          const thumb = document.createElement('button');
+          thumb.type = 'button';
+          thumb.className = 'sum-thumb';
+          thumb.setAttribute('aria-label', 'Show image ' + (position + 1));
+          const preview = document.createElement('img');
+          preview.src = source;
+          preview.alt = '';
+          preview.loading = 'lazy';
+          thumb.appendChild(preview);
+          thumb.addEventListener('click', () => show(position));
+          strip.appendChild(thumb);
+          thumbs.push(thumb);
+        });
+        gallery.appendChild(strip);
+      }
+
+      show(0);
+      hero.appendChild(gallery);
     }
     const heading = document.createElement('div');
     heading.className = 'sum-artist-name';
@@ -1231,7 +1378,14 @@
         anchor.href = link.url;
         anchor.target = '_blank';
         anchor.rel = 'noreferrer noopener';
-        anchor.textContent = link.label;
+        const icon = document.createElement('span');
+        icon.className = 'sum-link-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = iconForLink(link.label);
+        const text = document.createElement('span');
+        text.textContent = link.label;
+        anchor.appendChild(icon);
+        anchor.appendChild(text);
         links.appendChild(anchor);
       }
       refs.artist.appendChild(links);
@@ -1277,6 +1431,7 @@
     state,
     translate: window.__SUM_TRANSLATE__,
     render: renderLyrics,
+    linkIcon: iconForLink,
     refresh: window.__SUM_REFRESH__
   };
 

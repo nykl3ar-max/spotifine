@@ -21,7 +21,7 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 | **Synced lyrics** | Time-aligned lyrics from LRCLIB, active line highlighted, auto-scroll, click-free reading |
 | **Automatic translation** | Translates the playing lyrics into 249 languages, original and translation side by side, per-line cache |
 | **Pronunciation** | Romanised pronunciation for non-Latin lyrics (romaji, romaja, pinyin and more), shown under each line |
-| **Artist panel** | Verified biography, portrait, birth details, country, genres, profession, label and verified links from Wikipedia and Wikidata |
+| **Artist panel** | Verified biography, a scrollable photo gallery (arrows, counter and thumbnails), birth details, country, genres, profession, label and verified links with platform icons |
 | **Themes** | Eight colour themes plus a live custom palette (base, surface, text and accent), applied to the entire Spotify interface instantly |
 | **Custom CSS and HTML** | Restyle the whole client and inject your own markup from the panel; CSS imports/remote URLs, scripts, iframes and inline handlers are stripped |
 | **Zero footprint on disk** | Spotify's files are never patched. The interface is injected into the running app and disappears on restart |
@@ -79,7 +79,7 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | Control | What it does |
 | --- | --- |
 | **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
-| **Artist** tab | Portrait, biography, documented facts and verified links for the current artist |
+| **Artist** tab | Photo gallery, biography, documented facts and verified links (with logos for Wikipedia, the official site, X, Instagram, Facebook, YouTube, TikTok and MusicBrainz) |
 | **Style** tab | Eight themes, live base/surface/text/accent colour pickers, theme reset, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
 | **Ctrl+Shift+U** | Open or close the panel |
 | **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
@@ -143,6 +143,7 @@ Data sources:
 | --- | --- |
 | [LRCLIB](https://lrclib.net) | Synced and plain lyrics |
 | [Wikipedia](https://www.wikipedia.org) | Biography, portrait, article links |
+| [Wikimedia Commons](https://commons.wikimedia.org) | Additional artist photos for the gallery |
 | [Wikidata](https://www.wikidata.org) | Birth details, country, genres, profession, label, official links |
 | Google Translate public endpoint | Lyric translation |
 
