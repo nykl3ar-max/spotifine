@@ -103,7 +103,7 @@ The **Surface** control works with any palette:
 - **Glass** — a themed gradient backdrop with translucent, blurred main view, sidebar, player, top bar, card, menu, dialog, popover and panel surfaces. Opacity (20–90 %) and blur (0–40 px) are adjustable in the Style tab.
 - **OLED** — forces every themed surface to `#000000` with no blur, for true-black displays.
 
-The surface mode and palette are applied to Spotify's own layout wrappers, containers, top bar, cards, track rows, player, menus, dialogs, tooltips, popovers, scrollbars, selection colours, progress bar, play controls and the panel itself — not just the mod's panel.
+The surface mode and palette are applied to Spotify's own layout wrappers, containers, top bar, cards, track rows, player, menus, dialogs, tooltips, popovers, scrollbars, selection colours, progress bar, play controls and the panel itself — not just the mod's panel. Full-screen dialog roots stay transparent and only the actual modal card is painted, so opening a dialog, menu, the queue or another view cannot black out the client.
 
 Theme values are also forced onto Spotify's own theme wrappers, so the base surface, sidebars, cards, player, menus, dialogs and listboxes follow the selected theme instead of staying on Spotify's defaults. Artwork-derived header gradients are left intact.
 
@@ -173,6 +173,7 @@ Data sources:
 - **No DRM changes, no audio capture, no account changes.**
 - **Artist identity.** MusicBrainz (a music-only database) is queried first for an exact name match. The matching MusicBrainz ID is then used to find the Wikidata item, and Wikipedia is only read from that item's own article link. Candidates whose Wikidata item is not musical, or whose MusicBrainz disambiguation describes a political office, are discarded; a political lookalike with the same name therefore shows Unknown instead of the wrong person.
 - **Artist sources.** Besides Wikipedia and Wikidata, profiles pull documented facts and links from MusicBrainz relations plus Discogs, AllMusic, Genius, SoundCloud, Bandcamp, Apple Music, Deezer, Tidal and Pandora identifiers where available.
+- **Overlay safety.** Theme backgrounds are limited to real surfaces (menus, cards, player, layout wrapper). Dialog roots and dynamic overlay layers stay transparent, and theme/tab changes trigger a repaint so navigation does not leave a black canvas.
 - **Nothing is uploaded** except the queries needed for lyrics, translation and artist data. No analytics, no telemetry.
 - **Resilience.** Requests time out after 12 seconds and retry once on network or server errors; stale artist responses are discarded, and lyric/artist caches are capped so long sessions stay stable.
 - **Updates.** The panel reads `version.txt` from the repository at startup, every 15 minutes by default, on reconnect and when the panel becomes visible again. The interval is configurable in Style → About and updates, along with a manual **Check now** button. When a newer version exists, a badge appears in the header and the update command can be copied with one click; a failed check never interrupts playback.

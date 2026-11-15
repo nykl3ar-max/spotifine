@@ -33,8 +33,7 @@ html[data-sum-theme] .encore-light-theme {
   --essential-bright-accent: var(--sum-accent, #1ed760) !important;
 }
 
-html[data-sum-theme] .encore-dark-theme [role="menu"],
-html[data-sum-theme] .encore-dark-theme [role="dialog"] {
+html[data-sum-theme] .encore-dark-theme [role="menu"] {
   background-color: var(--sum-bg-elevated, #1f1f1f);
 }
 
@@ -46,9 +45,7 @@ html[data-sum-theme] [data-testid="now-playing-bar"] {
   background-color: var(--sum-bg-base, #121212) !important;
 }
 
-html[data-sum-theme] [role="menu"],
-html[data-sum-theme] [role="dialog"],
-html[data-sum-theme] [role="listbox"] {
+html[data-sum-theme] [role="menu"] {
   background-color: var(--sum-bg-elevated, #1f1f1f) !important;
 }
 
@@ -1127,11 +1124,13 @@ html[data-sum-effect="oled"] #Desktop_PanelContainer_Id,
 html[data-sum-effect="oled"] #Desktop_LeftSidebar_Id,
 html[data-sum-effect="oled"] [data-testid="global-nav-bar"],
 html[data-sum-effect="oled"] [data-testid="now-playing-bar"],
-html[data-sum-effect="oled"] [role="menu"],
-html[data-sum-effect="oled"] [role="dialog"],
-html[data-sum-effect="oled"] [role="listbox"] {
+html[data-sum-effect="oled"] [role="menu"] {
   background-color: #000000 !important;
   backdrop-filter: none;
+}
+
+html[data-sum-effect="oled"] [data-encore-id="card"] {
+  background-color: var(--sum-bg-elevated-highlight, #0a0a0a) !important;
 }
 
 /* Glass: translucent surfaces over a themed gradient backdrop */
@@ -1165,8 +1164,6 @@ html[data-sum-effect="glass"] [data-encore-id="card"] {
 }
 
 html[data-sum-effect="glass"] [role="menu"],
-html[data-sum-effect="glass"] [role="dialog"],
-html[data-sum-effect="glass"] [role="listbox"],
 html[data-sum-effect="glass"] [data-testid="context-menu"],
 html[data-sum-effect="glass"] [data-testid="popover"] {
   background-color: color-mix(in srgb, var(--sum-bg-elevated) var(--sum-glass-menu), transparent) !important;
@@ -1176,6 +1173,21 @@ html[data-sum-effect="glass"] [data-testid="popover"] {
 html[data-sum-effect="glass"] #sum-panel {
   background-color: color-mix(in srgb, var(--sum-bg-base) var(--sum-glass-menu), transparent) !important;
   backdrop-filter: blur(var(--sum-glass-blur)) saturate(1.3);
+}
+
+/* Dialog roots are often full-screen wrappers. Never paint them: inner
+   surfaces already inherit the theme variables, and an opaque root can cover
+   the whole client on slow repaints. */
+html[data-sum-theme] [role="dialog"],
+html[data-sum-effect="glass"] [role="dialog"],
+html[data-sum-effect="oled"] [role="dialog"] {
+  background-color: transparent !important;
+}
+
+/* Spotify hardcodes its modal surface; theme the content card, not the root. */
+html[data-sum-theme] [role="dialog"] > div:first-child {
+  background-color: var(--sum-bg-elevated, #1f1f1f) !important;
+  color: var(--sum-text, #ffffff);
 }
 
 @media (prefers-reduced-motion: reduce) {
