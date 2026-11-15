@@ -846,6 +846,54 @@ html[data-sum-theme] [data-testid="play-button"] svg {
   min-width: 54px;
 }
 
+.sum-presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.sum-preset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 52px;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-base, #fff);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.sum-preset:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sum-preset strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sum-preset span {
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.sum-preset.is-active {
+  border-color: var(--essential-bright-accent, #1ed760);
+  background: color-mix(in srgb, var(--essential-bright-accent, #1ed760) 14%, transparent);
+}
+
+.sum-preset.is-active strong {
+  color: var(--essential-bright-accent, #1ed760);
+}
+
 .sum-section[data-sum-section="style"] {
   overflow-y: auto;
   padding-bottom: 24px;
@@ -1188,6 +1236,37 @@ html[data-sum-effect="oled"] [role="dialog"] {
 html[data-sum-theme] [role="dialog"] > div:first-child {
   background-color: var(--sum-bg-elevated, #1f1f1f) !important;
   color: var(--sum-text, #ffffff);
+}
+
+/* Spotify layout presets: the client uses a three-column grid (library,
+   main view, now-playing sidebar). Collapse the hidden columns instead of
+   only hiding their contents, so the main view actually gains the space. */
+html[data-sum-ui="wide"] [data-testid="root"] > div:has(> #main-view) {
+  grid-template-columns: var(--sum-left-col, 420px) minmax(0, 1fr) 0 !important;
+}
+
+html[data-sum-ui="wide"] #Desktop_PanelContainer_Id {
+  display: none !important;
+}
+
+html[data-sum-ui="focus"] [data-testid="root"] > div:has(> #main-view),
+html[data-sum-ui="cinema"] [data-testid="root"] > div:has(> #main-view) {
+  grid-template-columns: 0 minmax(0, 1fr) 0 !important;
+}
+
+html[data-sum-ui="focus"] #Desktop_LeftSidebar_Id,
+html[data-sum-ui="focus"] #Desktop_PanelContainer_Id,
+html[data-sum-ui="cinema"] #Desktop_LeftSidebar_Id,
+html[data-sum-ui="cinema"] #Desktop_PanelContainer_Id {
+  display: none !important;
+}
+
+html[data-sum-ui="cinema"] [data-testid="global-nav-bar"] {
+  display: none !important;
+}
+
+html[data-sum-ui="cinema"] [data-testid="root"] > div:has(> #main-view) {
+  grid-template-rows: 0 0 minmax(0, 1fr) 72px !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

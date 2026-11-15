@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.15.2';
+  const VERSION = '3.16.0';
   const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
   const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
   const FACT_ORDER = ['Birth name', 'Born', 'Died', 'Birthplace', 'Origin', 'Country', 'Type', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
@@ -51,6 +51,7 @@
     motion: 'sum.motion',
     gallery: 'sum.gallery',
     avoid: 'sum.avoidSidebar',
+    ui: 'sum.uiPreset',
     updateInterval: 'sum.updateInterval'
   };
 
@@ -139,9 +140,18 @@
     }
   ];
 
+  const UI_PRESETS = [
+    { id: 'standard', name: 'Standard', hint: 'Library, main view and Now Playing sidebar', note: 'The full Spotify client.' },
+    { id: 'wide', name: 'Wide', hint: 'Hide the right sidebar', note: 'More room for the main view; the player stays.' },
+    { id: 'focus', name: 'Focus', hint: 'Hide both sidebars', note: 'Main view only, with top bar and player.' },
+    { id: 'cinema', name: 'Cinema', hint: 'Hide sidebars and top bar', note: 'Full artwork. Press Ctrl+Shift+U to reopen Spotifine.' }
+  ];
+
   const state = {
     tab: readSetting(LS.tab, 'lyrics'),
     theme: readSetting(LS.theme, 'spotify'),
+    ui: UI_PRESETS.some((preset) => preset.id === readSetting(LS.ui, 'standard')) ? readSetting(LS.ui, 'standard') : 'standard',
+    leftWidth: 420,
     accent: readSetting(LS.accent, ''),
     effect: readSetting(LS.effect, ''),
     custom: readSetting(LS.custom, { base: '#121212', elevated: '#1f1f1f', text: '#ffffff', accent: '#1ed760' }),
@@ -279,6 +289,14 @@
           <div id="sum-artist" class="sum-artist"></div>
         </section>
         <section class="sum-section" data-sum-section="style">
+          <details class="sum-group" open>
+            <summary class="sum-group-title">Spotify layout</summary>
+            <div class="sum-group-body">
+              <div class="sum-presets" id="sum-presets"></div>
+              <div class="sum-note" id="sum-layout-note"></div>
+            </div>
+          </details>
+
           <details class="sum-group" open>
             <summary class="sum-group-title">Appearance</summary>
             <div class="sum-group-body">
@@ -463,6 +481,8 @@
       artist: root.querySelector('#sum-artist'),
       theme: root.querySelector('#sum-theme'),
       surfaces: root.querySelector('#sum-surfaces'),
+      presets: root.querySelector('#sum-presets'),
+      uiNote: root.querySelector('#sum-layout-note'),
       resize: root.querySelector('#sum-resize'),
       width: root.querySelector('#sum-width'),
       widthValue: root.querySelector('#sum-width-value'),
@@ -515,6 +535,23 @@
     refs.motion.checked = state.reduceMotion;
     refs.gallery.checked = state.gallery;
     refs.sizeValue.textContent = state.size + 'px';
+
+    if (refs.presets) {
+      for (const preset of UI_PRESETS) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'sum-preset';
+        button.dataset.sumUi = preset.id;
+        button.title = preset.hint;
+        const name = document.createElement('strong');
+        name.textContent = preset.name;
+        const hint = document.createElement('span');
+        hint.textContent = preset.hint;
+        button.append(name, hint);
+        button.addEventListener('click', () => setUiPreset(preset.id));
+        refs.presets.appendChild(button);
+      }
+    }
 
     for (const theme of THEMES) {
       const option = document.createElement('option');
@@ -647,11 +684,14 @@
         state.side = 'right';
         state.glassAlpha = 55;
         state.glassBlur = 26;
+        state.ui = 'standard';
         writeSetting(LS.width, state.width);
         writeSetting(LS.side, state.side);
         writeSetting(LS.glassAlpha, state.glassAlpha);
         writeSetting(LS.glassBlur, state.glassBlur);
+        writeSetting(LS.ui, state.ui);
         applyLayout();
+        applyUiPreset();
       });
     }
     bindResize();
@@ -731,6 +771,7 @@
 
     applyTheme();
     applyLayout();
+    applyUiPreset();
     applyPreferences();
     syncPanelOffset();
     applyCustomCss(readSetting(LS.css, ''));
@@ -964,8 +1005,39 @@
     }
   }
 
+  function syncLeftColumn() {
+    const left = document.getElementById('Desktop_LeftSidebar_Id');
+    if (left && getComputedStyle(left).display !== 'none') {
+      const width = Math.round(left.getBoundingClientRect().width);
+      if (width > 120) { state.leftWidth = width; }
+    }
+    document.documentElement.style.setProperty('--sum-left-col', (state.leftWidth || 420) + 'px');
+  }
+
+  function applyUiPreset() {
+    const preset = UI_PRESETS.find((entry) => entry.id === state.ui) || UI_PRESETS[0];
+    state.ui = preset.id;
+    document.documentElement.setAttribute('data-sum-ui', preset.id);
+    if (refs.presets) {
+      refs.presets.querySelectorAll('[data-sum-ui]').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.sumUi === preset.id);
+      });
+    }
+    if (refs.uiNote) { refs.uiNote.textContent = preset.note; }
+    syncLeftColumn();
+    syncPanelOffset();
+  }
+
+  function setUiPreset(id) {
+    if (!UI_PRESETS.some((preset) => preset.id === id)) { return; }
+    state.ui = id;
+    writeSetting(LS.ui, state.ui);
+    applyUiPreset();
+  }
+
   function syncPanelOffset() {
     if (!refs.panel) { return; }
+    syncLeftColumn();
     let offset = 8;
     if (state.avoidSidebar && state.side === 'right') {
       const sidebar = document.getElementById('Desktop_PanelContainer_Id');
