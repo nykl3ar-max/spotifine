@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$script:AppName = 'Spotify Ultimate Mod'
+$script:AppName = 'Spotifine'
 
 function Find-SpotifyExe {
     $candidates = @(

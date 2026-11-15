@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Injects the Spotify Ultimate Mod interface into the running Spotify client.
+    Injects the Spotifine interface into the running Spotify client.
 
 .DESCRIPTION
     Starts Spotify with the Chromium DevTools port enabled when necessary, then
@@ -59,7 +59,7 @@ if (-not $spotifyExe) {
 
 if (-not (Test-DevToolsPort -Port $Port)) {
     if ($NoRestart) {
-        Say 'Spotify is not running with the DevTools port. Start it through the Spotify Ultimate Mod shortcut.'
+        Say 'Spotify is not running with the DevTools port. Start it through the Spotifine shortcut.'
         exit 1
     }
     if (Get-Process -Name 'Spotify' -ErrorAction SilentlyContinue) {
@@ -100,7 +100,7 @@ for ($attempt = 0; $attempt -lt 12; $attempt++) {
 }
 
 if ($injected) {
-    Say 'Spotify Ultimate Mod is active. Press Ctrl+Shift+U or use the Ultimate button to open it.'
+    Say 'Spotifine is active. Press Ctrl+Shift+U or use the Spotifine button to open it.'
 }
 else {
     Say 'The mod could not be injected. Open Spotify, start a track and run the shortcut again.'

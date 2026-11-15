@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Installs Spotify Ultimate Mod into the Spotify desktop client.
+    Installs Spotifine into the Spotify desktop client.
 
 .DESCRIPTION
     Downloads the mod files, creates Desktop and Start Menu launchers, starts
@@ -9,16 +9,16 @@
     No Spotify files are modified and nothing else needs to be installed.
 
 .EXAMPLE
-    irm https://raw.githubusercontent.com/nykl3ar-max/spotify-ultimate-mod-injector/main/install.ps1 | iex
+    irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex
 #>
 
 $ErrorActionPreference = 'Stop'
-$Version = '3.7.0'
-$Repo = 'nykl3ar-max/spotify-ultimate-mod-injector'
+$Version = '3.8.0'
+$Repo = 'nykl3ar-max/spotifine'
 $Branch = 'main'
 $BaseUrl = "https://raw.githubusercontent.com/$Repo/$Branch"
 $CacheBust = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-$InstallDir = Join-Path $env:LOCALAPPDATA 'SpotifyUltimateMod'
+$InstallDir = Join-Path $env:LOCALAPPDATA 'Spotifine'
 $SrcDir = Join-Path $InstallDir 'src'
 $Files = @('src/common.ps1', 'src/injector.ps1', 'src/payload.js', 'src/theme.css', 'uninstall.ps1')
 
@@ -42,7 +42,7 @@ function Find-SpotifyExe {
 }
 
 Write-Host ''
-Write-Host '  Spotify Ultimate Mod' -ForegroundColor White
+Write-Host '  Spotifine' -ForegroundColor White
 Write-Host '  Lyrics, translation, artist information and themes inside Spotify' -ForegroundColor DarkGray
 Write-Host ''
 
@@ -91,25 +91,42 @@ Set-Content -LiteralPath (Join-Path $InstallDir 'version.txt') -Value $Version -
 Write-Host "  Files installed to $InstallDir" -ForegroundColor DarkGray
 
 Write-Step 'Stopping an older watcher'
-$pidFile = Join-Path $InstallDir 'injector.pid'
-if (Test-Path -LiteralPath $pidFile) {
-    $recorded = Get-Content -LiteralPath $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($recorded) {
-        Stop-Process -Id ([int]$recorded) -Force -ErrorAction SilentlyContinue
+$legacyDir = Join-Path $env:LOCALAPPDATA 'SpotifyUltimateMod'
+foreach ($dir in @($InstallDir, $legacyDir)) {
+    $pidFile = Join-Path $dir 'injector.pid'
+    if (Test-Path -LiteralPath $pidFile) {
+        $recorded = Get-Content -LiteralPath $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($recorded) {
+            Stop-Process -Id ([int]$recorded) -Force -ErrorAction SilentlyContinue
+        }
+        Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
     }
-    Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
+    Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -and $_.CommandLine -like "*$dir*" -and $_.CommandLine -like '*injector.ps1*' } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 }
-Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue |
-    Where-Object { $_.CommandLine -and $_.CommandLine -like "*$InstallDir*" -and $_.CommandLine -like '*injector.ps1*' } |
-    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+
+Write-Step 'Removing the previous installation name'
+$legacyShortcuts = @(
+    [System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Spotify Ultimate Mod.lnk'),
+    [System.IO.Path]::Combine($env:APPDATA, 'Microsoft\Windows\Start Menu\Programs', 'Spotify Ultimate Mod.lnk')
+)
+foreach ($legacyShortcut in $legacyShortcuts) {
+    if (Test-Path -LiteralPath $legacyShortcut) {
+        Remove-Item -LiteralPath $legacyShortcut -Force -ErrorAction SilentlyContinue
+    }
+}
+if (Test-Path -LiteralPath $legacyDir) {
+    Remove-Item -LiteralPath $legacyDir -Recurse -Force -ErrorAction SilentlyContinue
+}
 
 Write-Step 'Creating launchers'
 $injector = Join-Path $SrcDir 'injector.ps1'
 $arguments = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + $injector + '" -Watch'
 $powershell = (Get-Command 'powershell.exe').Source
 $shortcuts = @(
-    [System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Spotify Ultimate Mod.lnk'),
-    [System.IO.Path]::Combine($env:APPDATA, 'Microsoft\Windows\Start Menu\Programs', 'Spotify Ultimate Mod.lnk')
+    [System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Spotifine.lnk'),
+    [System.IO.Path]::Combine($env:APPDATA, 'Microsoft\Windows\Start Menu\Programs', 'Spotifine.lnk')
 )
 $shell = New-Object -ComObject WScript.Shell
 foreach ($shortcutPath in $shortcuts) {
@@ -118,7 +135,7 @@ foreach ($shortcutPath in $shortcuts) {
     $shortcut.Arguments = $arguments
     $shortcut.WorkingDirectory = $InstallDir
     $shortcut.IconLocation = "$spotify,0"
-    $shortcut.Description = 'Spotify Ultimate Mod - lyrics, artist information and themes'
+    $shortcut.Description = 'Spotifine - lyrics, artist information and themes'
     $shortcut.WindowStyle = 1
     $shortcut.Save()
 }
@@ -134,9 +151,9 @@ Start-Process -FilePath $powershell -ArgumentList @(
 Write-Host '  The mod stays active while Spotify is running.' -ForegroundColor DarkGray
 
 Write-Host ''
-Write-Host '  Spotify Ultimate Mod is ready.' -ForegroundColor Green
+Write-Host '  Spotifine is ready.' -ForegroundColor Green
 Write-Host ''
-Write-Host '  Open the panel with Ctrl+Shift+U or the "Ultimate" button.' -ForegroundColor White
+Write-Host '  Open the panel with Ctrl+Shift+U or the "Spotifine" button.' -ForegroundColor White
 Write-Host '  Use the Desktop shortcut next time so Spotify always starts with the mod.' -ForegroundColor DarkGray
 Write-Host ('  Uninstall with: irm ' + "$BaseUrl/uninstall.ps1" + ' | iex') -ForegroundColor DarkGray
 Write-Host ''

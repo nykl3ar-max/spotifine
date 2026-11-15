@@ -1,11 +1,11 @@
-# Spotify Ultimate Mod
+# Spotifine
 
 **Lyrics, translation, artist intelligence and themes — injected directly into the Spotify desktop client.**
 
 One command installs it. Nothing else to download, no Node.js, no build tools, no account setup.
 
 ```powershell
-irm https://github.com/nykl3ar-max/spotify-ultimate-mod-injector/raw/refs/heads/main/install.ps1 | iex
+irm https://github.com/nykl3ar-max/spotifine/raw/refs/heads/main/install.ps1 | iex
 ```
 
 After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or click the mod's button in the player bar, next to Spotify's own lyrics button, to open the panel.
@@ -34,20 +34,20 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 2. Paste:
 
 ```powershell
-irm https://github.com/nykl3ar-max/spotify-ultimate-mod-injector/raw/refs/heads/main/install.ps1 | iex
+irm https://github.com/nykl3ar-max/spotifine/raw/refs/heads/main/install.ps1 | iex
 ```
 
-3. Wait for `Spotify Ultimate Mod is ready.`
+3. Wait for `Spotifine is ready.`
 
 The installer:
 
 - finds your Spotify installation;
-- downloads the mod files to `%LOCALAPPDATA%\SpotifyUltimateMod`;
+- downloads the mod files to `%LOCALAPPDATA%\Spotifine`;
 - creates **Desktop** and **Start Menu** launchers;
 - starts Spotify with its Chromium debugging port enabled;
 - injects the interface and starts a small background watcher that re-injects after a reload.
 
-Use the **Spotify Ultimate Mod** shortcut from then on so Spotify always starts ready for injection. Launching Spotify the normal way still works; run the shortcut once afterwards to bring the mod back.
+Use the **Spotifine** shortcut from then on so Spotify always starts ready for injection. Launching Spotify the normal way still works; run the shortcut once afterwards to bring the mod back.
 
 ### Updating
 
@@ -56,7 +56,7 @@ Run the install command again. Files are replaced and the watcher restarts.
 ### Uninstalling
 
 ```powershell
-irm https://github.com/nykl3ar-max/spotify-ultimate-mod-injector/raw/refs/heads/main/uninstall.ps1 | iex
+irm https://github.com/nykl3ar-max/spotifine/raw/refs/heads/main/uninstall.ps1 | iex
 ```
 
 This removes the launchers and mod files. Spotify itself is untouched; the mod is gone the next time Spotify starts normally.
@@ -83,7 +83,7 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | **Style** tab | Ten themes, Solid/Glass/OLED surface modes, live base/surface/text/accent colour pickers, theme reset, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
 | **Ctrl+Shift+U** | Open or close the panel |
 | **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
-| **Spotify menus** | Adds an **Ultimate Mod settings** entry to the profile menu and to three-dot menus, opening the Style tab |
+| **Spotify menus** | Adds an **Spotifine settings** entry to the profile menu and to three-dot menus, opening the Style tab |
 
 Settings, theme choice and translation cache are stored in Spotify's own local storage, so they survive restarts.
 
@@ -178,20 +178,20 @@ Data sources:
 | Symptom | Fix |
 | --- | --- |
 | `Spotify was not found` | Install the desktop app from spotify.com, then run the command again. |
-| Panel does not appear | Close Spotify, then open the **Spotify Ultimate Mod** shortcut. |
+| Panel does not appear | Close Spotify, then open the **Spotifine** shortcut. |
 | Nothing happens after a Spotify update | Run the install command again, then reopen the shortcut. |
 | Lyrics say "No lyrics were found" | LRCLIB has no record for that track; try another version of the song. |
 | Translation stops partway | Google's public endpoint is rate limited. Wait a minute and reopen the panel; already translated lines are cached. |
 | Artist panel is empty | Wikipedia/Wikidata has no article for that artist, or the network is blocked. |
-| Spotify starts without the panel | It was started from its own shortcut. Close it and use the **Spotify Ultimate Mod** shortcut. |
-| Logs | `%LOCALAPPDATA%\SpotifyUltimateMod\injector.log` |
+| Spotify starts without the panel | It was started from its own shortcut. Close it and use the **Spotifine** shortcut. |
+| Logs | `%LOCALAPPDATA%\Spotifine\injector.log` |
 
 ---
 
 ## Project layout
 
 ```text
-spotify-ultimate-mod-injector/
+spotifine/
 ├── install.ps1          One-command installer
 ├── uninstall.ps1        Removes launchers and files
 ├── src/

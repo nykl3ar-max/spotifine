@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.7.0';
+  const VERSION = '3.8.0';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -195,7 +195,7 @@
   }
 
   const html = `
-    <aside id="sum-panel" aria-label="Spotify Ultimate Mod panel">
+    <aside id="sum-panel" aria-label="Spotifine panel">
       <header class="sum-header">
         <div class="sum-tabs">
           <button type="button" class="sum-tab" data-sum-tab="lyrics">Lyrics</button>
@@ -276,7 +276,7 @@
           <div class="sum-note">Translation and pronunciation modelled on <a class="sum-link" href="https://github.com/TheoreticallyBryChen/Lingo-lyrics" target="_blank" rel="noreferrer noopener">Lingo-lyrics</a> (independent implementation).</div>
         </section>
       </div>
-      <footer class="sum-footer"><span>Ultimate Mod · LRCLIB · Wikipedia · Wikidata</span></footer>
+      <footer class="sum-footer"><span>Spotifine · LRCLIB · Wikipedia · Wikidata</span></footer>
     </aside>`;
 
   let refs = {};
@@ -484,8 +484,8 @@
       button.removeAttribute('data-testid');
       button.setAttribute('id', 'sum-toggle');
       button.setAttribute('data-sum-toggle', 'true');
-      button.setAttribute('aria-label', 'Spotify Ultimate Mod');
-      button.setAttribute('title', 'Spotify Ultimate Mod (Ctrl+Shift+U)');
+      button.setAttribute('aria-label', 'Spotifine');
+      button.setAttribute('title', 'Spotifine (Ctrl+Shift+U)');
       button.classList.remove('sum-fallback');
       const svg = button.querySelector('svg');
       if (svg) {
@@ -508,7 +508,7 @@
     fallback.id = 'sum-toggle';
     fallback.className = 'sum-fallback';
     fallback.setAttribute('data-sum-toggle', 'true');
-    fallback.setAttribute('aria-label', 'Spotify Ultimate Mod');
+    fallback.setAttribute('aria-label', 'Spotifine');
     fallback.textContent = 'L';
     fallback.addEventListener('click', () => setOpen(!state.open));
     refs.root.appendChild(fallback);
@@ -543,14 +543,14 @@
       entry.setAttribute('data-sum-menu', 'true');
       button.removeAttribute('aria-haspopup');
       button.removeAttribute('aria-expanded');
-      button.setAttribute('aria-label', 'Ultimate Mod settings');
+      button.setAttribute('aria-label', 'Spotifine settings');
       const label = button.querySelector('[data-encore-id="text"]');
       if (label) {
-        label.textContent = 'Ultimate Mod settings';
+        label.textContent = 'Spotifine settings';
         const labelWrap = label.parentElement;
         [...button.children].forEach((child) => { if (child !== labelWrap) { child.remove(); } });
       } else {
-        button.textContent = 'Ultimate Mod settings';
+        button.textContent = 'Spotifine settings';
       }
       button.addEventListener('click', (event) => {
         event.preventDefault();
