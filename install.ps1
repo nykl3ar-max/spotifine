@@ -90,6 +90,14 @@ Set-Content -LiteralPath (Join-Path $InstallDir 'version.txt') -Value $Version -
 Write-Host "  Files installed to $InstallDir" -ForegroundColor DarkGray
 
 Write-Step 'Stopping an older watcher'
+$pidFile = Join-Path $InstallDir 'injector.pid'
+if (Test-Path -LiteralPath $pidFile) {
+    $recorded = Get-Content -LiteralPath $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($recorded) {
+        Stop-Process -Id ([int]$recorded) -Force -ErrorAction SilentlyContinue
+    }
+    Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
+}
 Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.CommandLine -and $_.CommandLine -like "*$InstallDir*" -and $_.CommandLine -like '*injector.ps1*' } |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
@@ -129,7 +137,7 @@ Write-Host '  Spotify Ultimate Mod is ready.' -ForegroundColor Green
 Write-Host ''
 Write-Host '  Open the panel with Ctrl+Shift+U or the "Ultimate" button.' -ForegroundColor White
 Write-Host '  Use the Desktop shortcut next time so Spotify always starts with the mod.' -ForegroundColor DarkGray
-Write-Host '  Uninstall with: irm ' + "$BaseUrl/uninstall.ps1" + ' | iex' -ForegroundColor DarkGray
+Write-Host ('  Uninstall with: irm ' + "$BaseUrl/uninstall.ps1" + ' | iex') -ForegroundColor DarkGray
 Write-Host ''
 Write-Host '  Spotify is not modified on disk. This project is not affiliated with Spotify.' -ForegroundColor DarkGray
 Write-Host ''

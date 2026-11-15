@@ -34,6 +34,7 @@ $ErrorActionPreference = 'Stop'
 
 $installRoot = Split-Path -Parent $PSScriptRoot
 $logPath = Join-Path $installRoot 'injector.log'
+$pidPath = Join-Path $installRoot 'injector.pid'
 $payloadPath = Join-Path $PSScriptRoot 'payload.js'
 $cssPath = Join-Path $PSScriptRoot 'theme.css'
 
@@ -109,10 +110,12 @@ else {
 if (-not $Watch) { exit 0 }
 
 Say 'Watching Spotify for reloads...'
+Set-Content -LiteralPath $pidPath -Value $PID -Encoding ASCII
 while ($true) {
     try {
         if (-not (Get-Process -Name 'Spotify' -ErrorAction SilentlyContinue)) {
             Say 'Spotify was closed. The watcher has stopped.'
+            Remove-Item -LiteralPath $pidPath -Force -ErrorAction SilentlyContinue
             break
         }
         if (-not (Test-DevToolsPort -Port $Port)) {

@@ -18,6 +18,14 @@ Write-Host ''
 Write-Host '  Spotify Ultimate Mod uninstaller' -ForegroundColor White
 Write-Host ''
 
+$pidFile = Join-Path $InstallDir 'injector.pid'
+if (Test-Path -LiteralPath $pidFile) {
+    $recorded = Get-Content -LiteralPath $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($recorded) {
+        Stop-Process -Id ([int]$recorded) -Force -ErrorAction SilentlyContinue
+    }
+}
+
 Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.CommandLine -and $_.CommandLine -like "*$InstallDir*" -and $_.CommandLine -like '*injector.ps1*' } |
     ForEach-Object {
