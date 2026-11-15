@@ -24,6 +24,7 @@ After it finishes, Spotify opens with the mod active. Press **Ctrl+Shift+U** or 
 | **Artist panel** | Verified biography, a scrollable photo gallery (arrows, counter and thumbnails), birth details, country, genres, profession, label and verified links with platform icons |
 | **Themes** | Fourteen themes plus a live custom palette (base, surface, text and accent), with Solid, Glass and OLED surface modes applied across the client: layout wrappers, cards, track rows, top bar, player, menus, dialogs, tooltips, popovers, scrollbars, selection, progress bar and play buttons |
 | **Layout presets** | Standard, Wide, Focus and Cinema reshape Spotify's own grid: hide the Now Playing sidebar, both sidebars, or both sidebars and the top bar, while keeping the player |
+| **Fine-tuning** | Corner radius from square to rounded, four interface fonts (Spotify Mix, System, Monospace, Serif), compact cards, hidden scrollbars and a switch for client animations |
 | **Custom CSS and HTML** | Restyle the whole client and inject your own markup from the panel; CSS imports/remote URLs, scripts, iframes and inline handlers are stripped |
 | **Zero footprint on disk** | Spotify's files are never patched. The interface is injected into the running app and disappears on restart |
 
@@ -81,7 +82,7 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | --- | --- |
 | **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
 | **Artist** tab | Spotify-style header with gallery, name, artist badge and country/active/genres line; biography, every detail row shown (Unknown when missing) and verified links with logos. Identity is resolved through MusicBrainz first and cross-checked against Wikidata, so same-name politicians and other unrelated entries are rejected |
-| **Style** tab | Grouped Spotify layout, Appearance, Lyrics, Behavior, Advanced and About sections. Layout presets, theme picker, accent and custom palette, Solid/Glass/OLED, panel width/side, right-sidebar avoidance, glass opacity/blur, text size, auto-scroll, pronunciation, compact panel, reduced motion, gallery toggle, update interval, manual update check, diagnostics, and custom CSS/HTML |
+| **Style** tab | Grouped Spotify layout, Fine-tuning, Appearance, Lyrics, Behavior, Advanced and About sections. Layout presets, corner radius, interface font, compact cards, scrollbar and animation switches, theme picker, accent and custom palette, Solid/Glass/OLED, panel width/side, right-sidebar avoidance, glass opacity/blur, text size, auto-scroll, pronunciation, compact panel, reduced motion, gallery toggle, update interval, manual update check, diagnostics, and custom CSS/HTML |
 | **Panel layout** | Width from 360–620 px (slider or drag the panel edge), docked left or right, plus adjustable glass opacity and blur with a one-click layout reset. On the right it automatically stops left of Spotify's Now Playing sidebar instead of covering it; the avoidance, compact panel, reduced motion and artist gallery toggles live in the Behavior group. Spotify layout presets sit at the top of Style |
 | **Updates** | Checks GitHub on startup, every 15 minutes (configurable: 15 min, hourly, 6-hourly, daily, manual), when the network returns and when the panel becomes visible; shows an update badge and copies the install command |
 | **Ctrl+Shift+U** | Open or close the panel |
@@ -120,6 +121,18 @@ The panel itself uses Spotify's design language rather than its own: SpotifyMixU
 | **Cinema** | Hides both sidebars and the top bar for full artwork and tracklists; the player remains |
 
 Presets change the real grid columns, not just visibility, so the main view actually gains the space. Cinema removes the top bar; reopen Spotifine with **Ctrl+Shift+U** or pick another preset from the panel.
+
+### Fine-tuning
+
+| Control | Effect |
+| --- | --- |
+| **Corners** | 0–20 px radius for cards, dialogs, menus, popovers, the main view, the player and the panel |
+| **Font** | Spotify Mix, System (Segoe UI), Monospace or Serif across the client and the panel |
+| **Compact cards** | Reduces card padding from 12 px to 8 px |
+| **Hide scrollbars** | Removes visible scrollbars while keeping every list scrollable |
+| **Disable animations** | Turns off Spotify's transitions and animations |
+
+Fine-tuning is stored with the theme and layout settings. **Reset layout** restores the native values.
 
 ### Custom CSS and HTML
 

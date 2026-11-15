@@ -2,6 +2,7 @@
 
 :root {
   --sum-width: 372px;
+  --sum-radius: 8px;
   --sum-glass-alpha: 55%;
   --sum-glass-blur: 26px;
   --sum-glass-menu: 72%;
@@ -1236,6 +1237,54 @@ html[data-sum-effect="oled"] [role="dialog"] {
 html[data-sum-theme] [role="dialog"] > div:first-child {
   background-color: var(--sum-bg-elevated, #1f1f1f) !important;
   color: var(--sum-text, #ffffff);
+}
+
+/* Fine-tuning: the same controls drive Spotify's own surfaces and the panel. */
+html[data-sum-font="system"] {
+  --sum-font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+}
+
+html[data-sum-font="mono"] {
+  --sum-font-family: "Cascadia Mono", Consolas, monospace;
+}
+
+html[data-sum-font="serif"] {
+  --sum-font-family: Georgia, "Times New Roman", serif;
+}
+
+html[data-sum-font]:not([data-sum-font="spotify"]) body *:not(svg):not(path) {
+  font-family: var(--sum-font-family) !important;
+}
+
+html[data-sum-compact-cards="on"] [data-encore-id="card"] {
+  padding: 8px !important;
+}
+
+html[data-sum-scrollbars="hidden"] * {
+  scrollbar-width: none !important;
+}
+
+html[data-sum-scrollbars="hidden"] *::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+html[data-sum-animations="off"] *,
+html[data-sum-animations="off"] *::before,
+html[data-sum-animations="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+html[data-sum-font] [data-encore-id="card"],
+html[data-sum-font] [role="dialog"] > div:first-child,
+html[data-sum-font] [role="menu"],
+html[data-sum-font] [data-testid="context-menu"],
+html[data-sum-font] [data-testid="popover"],
+html[data-sum-font] #main-view,
+html[data-sum-font] [data-testid="now-playing-bar"],
+#sum-panel {
+  border-radius: var(--sum-radius, 8px) !important;
 }
 
 /* Spotify layout presets: the client uses a three-column grid (library,

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.16.0';
+  const VERSION = '3.17.0';
   const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
   const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
   const FACT_ORDER = ['Birth name', 'Born', 'Died', 'Birthplace', 'Origin', 'Country', 'Type', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
@@ -52,6 +52,11 @@
     gallery: 'sum.gallery',
     avoid: 'sum.avoidSidebar',
     ui: 'sum.uiPreset',
+    radius: 'sum.radius',
+    font: 'sum.font',
+    compactCards: 'sum.compactCards',
+    hideScrollbars: 'sum.hideScrollbars',
+    noAnimations: 'sum.noAnimations',
     updateInterval: 'sum.updateInterval'
   };
 
@@ -152,6 +157,11 @@
     theme: readSetting(LS.theme, 'spotify'),
     ui: UI_PRESETS.some((preset) => preset.id === readSetting(LS.ui, 'standard')) ? readSetting(LS.ui, 'standard') : 'standard',
     leftWidth: 420,
+    radius: clamp(Number(readSetting(LS.radius, 8)) || 0, 0, 20),
+    font: ['spotify', 'system', 'mono', 'serif'].includes(readSetting(LS.font, 'spotify')) ? readSetting(LS.font, 'spotify') : 'spotify',
+    compactCards: Boolean(readSetting(LS.compactCards, false)),
+    hideScrollbars: Boolean(readSetting(LS.hideScrollbars, false)),
+    noAnimations: Boolean(readSetting(LS.noAnimations, false)),
     accent: readSetting(LS.accent, ''),
     effect: readSetting(LS.effect, ''),
     custom: readSetting(LS.custom, { base: '#121212', elevated: '#1f1f1f', text: '#ffffff', accent: '#1ed760' }),
@@ -294,6 +304,38 @@
             <div class="sum-group-body">
               <div class="sum-presets" id="sum-presets"></div>
               <div class="sum-note" id="sum-layout-note"></div>
+            </div>
+          </details>
+
+          <details class="sum-group" open>
+            <summary class="sum-group-title">Fine-tuning</summary>
+            <div class="sum-group-body">
+              <div class="sum-row">
+                <span class="sum-label">Corners</span>
+                <span class="sum-range-field"><input id="sum-radius" type="range" min="0" max="20" step="1" class="sum-range" aria-label="Corner radius"><code id="sum-radius-value" class="sum-hex">8px</code></span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Font</span>
+                <select id="sum-font" class="sum-select" aria-label="Interface font">
+                  <option value="spotify">Spotify Mix</option>
+                  <option value="system">System</option>
+                  <option value="mono">Monospace</option>
+                  <option value="serif">Serif</option>
+                </select>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Compact cards</span>
+                <input id="sum-card-compact" type="checkbox" class="sum-check" aria-label="Compact cards">
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Hide scrollbars</span>
+                <input id="sum-scrollbars" type="checkbox" class="sum-check" aria-label="Hide scrollbars">
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Disable animations</span>
+                <input id="sum-animations" type="checkbox" class="sum-check" aria-label="Disable client animations">
+              </div>
+              <div class="sum-note">Fine-tuning applies to Spotify itself and to the panel.</div>
             </div>
           </details>
 
@@ -483,6 +525,12 @@
       surfaces: root.querySelector('#sum-surfaces'),
       presets: root.querySelector('#sum-presets'),
       uiNote: root.querySelector('#sum-layout-note'),
+      radius: root.querySelector('#sum-radius'),
+      radiusValue: root.querySelector('#sum-radius-value'),
+      font: root.querySelector('#sum-font'),
+      cardCompact: root.querySelector('#sum-card-compact'),
+      scrollbars: root.querySelector('#sum-scrollbars'),
+      animations: root.querySelector('#sum-animations'),
       resize: root.querySelector('#sum-resize'),
       width: root.querySelector('#sum-width'),
       widthValue: root.querySelector('#sum-width-value'),
@@ -535,6 +583,12 @@
     refs.motion.checked = state.reduceMotion;
     refs.gallery.checked = state.gallery;
     refs.sizeValue.textContent = state.size + 'px';
+    refs.radius.value = String(state.radius);
+    refs.radiusValue.textContent = state.radius + 'px';
+    refs.font.value = state.font;
+    refs.cardCompact.checked = state.compactCards;
+    refs.scrollbars.checked = state.hideScrollbars;
+    refs.animations.checked = state.noAnimations;
 
     if (refs.presets) {
       for (const preset of UI_PRESETS) {
@@ -608,6 +662,31 @@
       state.romanize = refs.roman.checked;
       writeSetting(LS.romanize, state.romanize);
       renderLyrics();
+    });
+    refs.radius.addEventListener('input', () => {
+      state.radius = clamp(Number(refs.radius.value) || 0, 0, 20);
+      writeSetting(LS.radius, state.radius);
+      applyCustomization();
+    });
+    refs.font.addEventListener('change', () => {
+      state.font = ['spotify', 'system', 'mono', 'serif'].includes(refs.font.value) ? refs.font.value : 'spotify';
+      writeSetting(LS.font, state.font);
+      applyCustomization();
+    });
+    refs.cardCompact.addEventListener('change', () => {
+      state.compactCards = refs.cardCompact.checked;
+      writeSetting(LS.compactCards, state.compactCards);
+      applyCustomization();
+    });
+    refs.scrollbars.addEventListener('change', () => {
+      state.hideScrollbars = refs.scrollbars.checked;
+      writeSetting(LS.hideScrollbars, state.hideScrollbars);
+      applyCustomization();
+    });
+    refs.animations.addEventListener('change', () => {
+      state.noAnimations = refs.animations.checked;
+      writeSetting(LS.noAnimations, state.noAnimations);
+      applyCustomization();
     });
     refs.compact.addEventListener('change', () => {
       state.compact = refs.compact.checked;
@@ -685,13 +764,24 @@
         state.glassAlpha = 55;
         state.glassBlur = 26;
         state.ui = 'standard';
+        state.radius = 8;
+        state.font = 'spotify';
+        state.compactCards = false;
+        state.hideScrollbars = false;
+        state.noAnimations = false;
         writeSetting(LS.width, state.width);
         writeSetting(LS.side, state.side);
         writeSetting(LS.glassAlpha, state.glassAlpha);
         writeSetting(LS.glassBlur, state.glassBlur);
         writeSetting(LS.ui, state.ui);
+        writeSetting(LS.radius, state.radius);
+        writeSetting(LS.font, state.font);
+        writeSetting(LS.compactCards, state.compactCards);
+        writeSetting(LS.hideScrollbars, state.hideScrollbars);
+        writeSetting(LS.noAnimations, state.noAnimations);
         applyLayout();
         applyUiPreset();
+        applyCustomization();
       });
     }
     bindResize();
@@ -772,6 +862,7 @@
     applyTheme();
     applyLayout();
     applyUiPreset();
+    applyCustomization();
     applyPreferences();
     syncPanelOffset();
     applyCustomCss(readSetting(LS.css, ''));
@@ -1033,6 +1124,22 @@
     state.ui = id;
     writeSetting(LS.ui, state.ui);
     applyUiPreset();
+  }
+
+  function applyCustomization() {
+    const root = document.documentElement;
+    state.radius = clamp(Number(state.radius) || 0, 0, 20);
+    root.style.setProperty('--sum-radius', state.radius + 'px');
+    root.setAttribute('data-sum-font', state.font);
+    root.setAttribute('data-sum-compact-cards', state.compactCards ? 'on' : 'off');
+    root.setAttribute('data-sum-scrollbars', state.hideScrollbars ? 'hidden' : 'shown');
+    root.setAttribute('data-sum-animations', state.noAnimations ? 'off' : 'on');
+    if (refs.radius) { refs.radius.value = String(state.radius); }
+    if (refs.radiusValue) { refs.radiusValue.textContent = state.radius + 'px'; }
+    if (refs.font) { refs.font.value = state.font; }
+    if (refs.cardCompact) { refs.cardCompact.checked = state.compactCards; }
+    if (refs.scrollbars) { refs.scrollbars.checked = state.hideScrollbars; }
+    if (refs.animations) { refs.animations.checked = state.noAnimations; }
   }
 
   function syncPanelOffset() {
