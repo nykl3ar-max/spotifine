@@ -16,7 +16,8 @@ $ErrorActionPreference = 'Stop'
 $Version = '3.3.0'
 $Repo = 'nykl3ar-max/spotify-ultimate-mod-injector'
 $Branch = 'main'
-$BaseUrl = "https://github.com/$Repo/raw/refs/heads/$Branch"
+$BaseUrl = "https://raw.githubusercontent.com/$Repo/$Branch"
+$CacheBust = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
 $InstallDir = Join-Path $env:LOCALAPPDATA 'SpotifyUltimateMod'
 $SrcDir = Join-Path $InstallDir 'src'
 $Files = @('src/common.ps1', 'src/injector.ps1', 'src/payload.js', 'src/theme.css', 'uninstall.ps1')
@@ -70,7 +71,7 @@ foreach ($file in $Files) {
     if (-not (Test-Path -LiteralPath $parent)) {
         New-Item -ItemType Directory -Path $parent -Force | Out-Null
     }
-    $url = "$BaseUrl/$file"
+    $url = "$BaseUrl/$file`?t=$CacheBust"
     $downloaded = $false
     for ($attempt = 0; $attempt -lt 3 -and -not $downloaded; $attempt++) {
         try {
