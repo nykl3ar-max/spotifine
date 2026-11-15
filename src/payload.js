@@ -1,11 +1,22 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.13.1';
+  const VERSION = '3.14.1';
   const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
   const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
   const FACT_ORDER = ['Birth name', 'Born', 'Died', 'Birthplace', 'Origin', 'Country', 'Type', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
   const CSS = window.__SUM_CSS__ || '';
+
+  if (!window.__SUM_ERROR_GUARD__) {
+    window.__SUM_ERROR_GUARD__ = true;
+    window.__SUM_ERRORS__ = [];
+    const noteError = (value) => {
+      window.__SUM_ERRORS__.push({ at: new Date().toISOString(), message: String((value && value.message) || value).slice(0, 240) });
+      if (window.__SUM_ERRORS__.length > 20) { window.__SUM_ERRORS__.shift(); }
+    };
+    window.addEventListener('error', (event) => noteError(event.error || event.message));
+    window.addEventListener('unhandledrejection', (event) => noteError(event.reason));
+  }
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
     if (typeof window.__SUM_REFRESH__ === 'function') {
@@ -35,7 +46,12 @@
     width: 'sum.width',
     side: 'sum.side',
     glassAlpha: 'sum.glassAlpha',
-    glassBlur: 'sum.glassBlur'
+    glassBlur: 'sum.glassBlur',
+    compact: 'sum.compact',
+    motion: 'sum.motion',
+    gallery: 'sum.gallery',
+    avoid: 'sum.avoidSidebar',
+    updateInterval: 'sum.updateInterval'
   };
 
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -133,6 +149,14 @@
     side: readSetting(LS.side, 'right') === 'left' ? 'left' : 'right',
     glassAlpha: clamp(Number(readSetting(LS.glassAlpha, 55)) || 55, 20, 90),
     glassBlur: clamp(Number(readSetting(LS.glassBlur, 26)) || 0, 0, 40),
+    compact: Boolean(readSetting(LS.compact, false)),
+    reduceMotion: Boolean(readSetting(LS.motion, false)),
+    gallery: readSetting(LS.gallery, true) !== false,
+    avoidSidebar: readSetting(LS.avoid, true) !== false,
+    updateInterval: clamp(Number(readSetting(LS.updateInterval, 15)) || 0, 0, 1440),
+    updateCheckedAt: 0,
+    updateError: '',
+    updateBusy: false,
     lang: readSetting(LS.lang, 'en'),
     mode: readSetting(LS.mode, 'both'),
     size: Number(readSetting(LS.size, 15)) || 15,
@@ -255,87 +279,149 @@
           <div id="sum-artist" class="sum-artist"></div>
         </section>
         <section class="sum-section" data-sum-section="style">
-          <div class="sum-label">Theme</div>
-          <div class="sum-themes" id="sum-themes"></div>
-          <div class="sum-label">Surface</div>
-          <div class="sum-surfaces" id="sum-surfaces">
-            <button type="button" class="sum-surface" data-sum-effect="solid">Solid</button>
-            <button type="button" class="sum-surface" data-sum-effect="glass">Glass</button>
-            <button type="button" class="sum-surface" data-sum-effect="oled">OLED</button>
-          </div>
-          <div class="sum-label">Panel</div>
-          <div class="sum-row">
-            <span class="sum-label">Width</span>
-            <span class="sum-range-field"><input id="sum-width" type="range" min="360" max="620" step="4" class="sum-range" aria-label="Panel width"><code id="sum-width-value" class="sum-hex">372px</code></span>
-          </div>
-          <div class="sum-row">
-            <span class="sum-label">Position</span>
-            <span class="sum-segment" id="sum-side">
-              <button type="button" class="sum-segment-btn" data-sum-side="right">Right</button>
-              <button type="button" class="sum-segment-btn" data-sum-side="left">Left</button>
-            </span>
-          </div>
-          <div class="sum-label">Glass</div>
-          <div class="sum-row">
-            <span class="sum-label">Opacity</span>
-            <span class="sum-range-field"><input id="sum-glass-alpha" type="range" min="20" max="90" step="1" class="sum-range" aria-label="Glass opacity"><code id="sum-glass-alpha-value" class="sum-hex">55%</code></span>
-          </div>
-          <div class="sum-row">
-            <span class="sum-label">Blur</span>
-            <span class="sum-range-field"><input id="sum-glass-blur" type="range" min="0" max="40" step="1" class="sum-range" aria-label="Glass blur"><code id="sum-glass-blur-value" class="sum-hex">26px</code></span>
-          </div>
-          <div class="sum-row sum-actions">
-            <button type="button" id="sum-layout-reset" class="sum-btn sum-ghost">Reset layout</button>
-          </div>
-          <div class="sum-row">
-            <span class="sum-label">Accent</span>
-            <input id="sum-accent" type="color" class="sum-color" aria-label="Accent colour">
-          </div>
-          <div class="sum-label">Custom colours</div>
-          <div class="sum-row">
-            <span class="sum-label">Base</span>
-            <span class="sum-color-field"><input id="sum-base" type="color" class="sum-color" aria-label="Base colour"><code id="sum-base-hex" class="sum-hex"></code></span>
-          </div>
-          <div class="sum-row">
-            <span class="sum-label">Surface</span>
-            <span class="sum-color-field"><input id="sum-surface" type="color" class="sum-color" aria-label="Surface colour"><code id="sum-surface-hex" class="sum-hex"></code></span>
-          </div>
-          <div class="sum-row">
-            <span class="sum-label">Text</span>
-            <span class="sum-color-field"><input id="sum-text" type="color" class="sum-color" aria-label="Text colour"><code id="sum-text-hex" class="sum-hex"></code></span>
-          </div>
-          <div class="sum-row sum-actions">
-            <button type="button" id="sum-theme-reset" class="sum-btn sum-ghost">Reset theme</button>
-          </div>
-          <div class="sum-row">
-            <span class="sum-label">Auto-scroll lyrics</span>
-            <input id="sum-scroll" type="checkbox" class="sum-check">
-          </div>
-          <div class="sum-row">
-            <span class="sum-label">Pronunciation</span>
-            <input id="sum-roman" type="checkbox" class="sum-check">
-          </div>
-          <div class="sum-label">Custom CSS</div>
-          <textarea id="sum-css" class="sum-textarea" spellcheck="false" placeholder="/* Customise the interface */"></textarea>
-          <div class="sum-row sum-actions">
-            <button type="button" id="sum-css-apply" class="sum-btn">Apply</button>
-            <button type="button" id="sum-css-reset" class="sum-btn sum-ghost">Reset</button>
-          </div>
-          <div class="sum-note">Custom CSS is sanitised: imports and remote URLs are removed.</div>
-          <div class="sum-label">Custom HTML</div>
-          <textarea id="sum-html" class="sum-textarea" spellcheck="false" placeholder="<!-- Add your own markup -->"></textarea>
-          <div class="sum-row sum-actions">
-            <button type="button" id="sum-html-apply" class="sum-btn">Apply</button>
-            <button type="button" id="sum-html-reset" class="sum-btn sum-ghost">Reset</button>
-          </div>
-          <div class="sum-note">HTML is rendered in #sum-custom-html; scripts, iframes and inline handlers are removed.</div>
-          <div class="sum-label">About</div>
-          <div class="sum-note" id="sum-version">Spotifine</div>
-          <div class="sum-row sum-actions">
-            <button type="button" id="sum-update-copy" class="sum-btn" hidden>Copy update command</button>
-            <a class="sum-link" href="https://github.com/nykl3ar-max/spotifine" target="_blank" rel="noreferrer noopener">GitHub</a>
-          </div>
-          <div class="sum-note">Translation and pronunciation modelled on <a class="sum-link" href="https://github.com/TheoreticallyBryChen/Lingo-lyrics" target="_blank" rel="noreferrer noopener">Lingo-lyrics</a> (independent implementation).</div>
+          <details class="sum-group" open>
+            <summary class="sum-group-title">Appearance</summary>
+            <div class="sum-group-body">
+              <div class="sum-row">
+                <span class="sum-label">Theme</span>
+                <select id="sum-theme" class="sum-select" aria-label="Theme"></select>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Accent</span>
+                <input id="sum-accent" type="color" class="sum-color" aria-label="Accent colour">
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Surface</span>
+                <span class="sum-surfaces" id="sum-surfaces">
+                  <button type="button" class="sum-surface" data-sum-effect="solid">Solid</button>
+                  <button type="button" class="sum-surface" data-sum-effect="glass">Glass</button>
+                  <button type="button" class="sum-surface" data-sum-effect="oled">OLED</button>
+                </span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Panel width</span>
+                <span class="sum-range-field"><input id="sum-width" type="range" min="360" max="620" step="4" class="sum-range" aria-label="Panel width"><code id="sum-width-value" class="sum-hex">372px</code></span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Panel side</span>
+                <span class="sum-segment" id="sum-side">
+                  <button type="button" class="sum-segment-btn" data-sum-side="right">Right</button>
+                  <button type="button" class="sum-segment-btn" data-sum-side="left">Left</button>
+                </span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Avoid right sidebar</span>
+                <input id="sum-avoid" type="checkbox" class="sum-check" aria-label="Avoid right sidebar">
+              </div>
+              <div class="sum-subhead">Glass effect</div>
+              <div class="sum-row">
+                <span class="sum-label">Opacity</span>
+                <span class="sum-range-field"><input id="sum-glass-alpha" type="range" min="20" max="90" step="1" class="sum-range" aria-label="Glass opacity"><code id="sum-glass-alpha-value" class="sum-hex">55%</code></span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Blur</span>
+                <span class="sum-range-field"><input id="sum-glass-blur" type="range" min="0" max="40" step="1" class="sum-range" aria-label="Glass blur"><code id="sum-glass-blur-value" class="sum-hex">26px</code></span>
+              </div>
+              <div class="sum-subhead">Custom palette</div>
+              <div class="sum-row">
+                <span class="sum-label">Base</span>
+                <span class="sum-color-field"><input id="sum-base" type="color" class="sum-color" aria-label="Base colour"><code id="sum-base-hex" class="sum-hex"></code></span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Surface</span>
+                <span class="sum-color-field"><input id="sum-surface" type="color" class="sum-color" aria-label="Surface colour"><code id="sum-surface-hex" class="sum-hex"></code></span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Text</span>
+                <span class="sum-color-field"><input id="sum-text" type="color" class="sum-color" aria-label="Text colour"><code id="sum-text-hex" class="sum-hex"></code></span>
+              </div>
+              <div class="sum-row sum-actions">
+                <button type="button" id="sum-layout-reset" class="sum-btn sum-ghost">Reset layout</button>
+                <button type="button" id="sum-theme-reset" class="sum-btn sum-ghost">Reset theme</button>
+              </div>
+            </div>
+          </details>
+
+          <details class="sum-group">
+            <summary class="sum-group-title">Lyrics</summary>
+            <div class="sum-group-body">
+              <div class="sum-row">
+                <span class="sum-label">Text size</span>
+                <span class="sum-stepper">
+                  <button type="button" id="sum-size-down" class="sum-step" aria-label="Smaller lyrics">A&#8722;</button>
+                  <code id="sum-size-value" class="sum-hex">15px</code>
+                  <button type="button" id="sum-size-up" class="sum-step" aria-label="Larger lyrics">A+</button>
+                </span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Auto-scroll</span>
+                <input id="sum-scroll" type="checkbox" class="sum-check" aria-label="Auto-scroll lyrics">
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Pronunciation</span>
+                <input id="sum-roman" type="checkbox" class="sum-check" aria-label="Pronunciation">
+              </div>
+              <div class="sum-note">Language and display mode remain in the Lyrics toolbar. Translation and pronunciation are modelled on <a class="sum-link" href="https://github.com/TheoreticallyBryChen/Lingo-lyrics" target="_blank" rel="noreferrer noopener">Lingo-lyrics</a>.</div>
+            </div>
+          </details>
+
+          <details class="sum-group">
+            <summary class="sum-group-title">Behavior</summary>
+            <div class="sum-group-body">
+              <div class="sum-row">
+                <span class="sum-label">Compact panel</span>
+                <input id="sum-compact" type="checkbox" class="sum-check" aria-label="Compact panel">
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Reduce motion</span>
+                <input id="sum-motion" type="checkbox" class="sum-check" aria-label="Reduce motion">
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Artist photo gallery</span>
+                <input id="sum-gallery" type="checkbox" class="sum-check" aria-label="Artist photo gallery">
+              </div>
+            </div>
+          </details>
+
+          <details class="sum-group">
+            <summary class="sum-group-title">Advanced</summary>
+            <div class="sum-group-body">
+              <div class="sum-subhead">Custom CSS</div>
+              <textarea id="sum-css" class="sum-textarea" spellcheck="false" placeholder="/* Customise the interface */"></textarea>
+              <div class="sum-row sum-actions">
+                <button type="button" id="sum-css-apply" class="sum-btn">Apply</button>
+                <button type="button" id="sum-css-reset" class="sum-btn sum-ghost">Reset</button>
+              </div>
+              <div class="sum-note">Custom CSS is sanitised: imports and remote URLs are removed.</div>
+              <div class="sum-subhead">Custom HTML</div>
+              <textarea id="sum-html" class="sum-textarea" spellcheck="false" placeholder="<!-- Add your own markup -->"></textarea>
+              <div class="sum-row sum-actions">
+                <button type="button" id="sum-html-apply" class="sum-btn">Apply</button>
+                <button type="button" id="sum-html-reset" class="sum-btn sum-ghost">Reset</button>
+              </div>
+              <div class="sum-note">HTML is rendered in #sum-custom-html; scripts, iframes and inline handlers are removed.</div>
+            </div>
+          </details>
+
+          <details class="sum-group">
+            <summary class="sum-group-title">About and updates</summary>
+            <div class="sum-group-body">
+              <div class="sum-note" id="sum-version">Spotifine</div>
+              <div class="sum-row">
+                <span class="sum-label">Check for updates</span>
+                <select id="sum-update-interval" class="sum-select" aria-label="Update check interval"></select>
+              </div>
+              <div class="sum-row sum-actions">
+                <button type="button" id="sum-update-now" class="sum-btn sum-ghost">Check now</button>
+                <button type="button" id="sum-update-copy" class="sum-btn" hidden>Copy update command</button>
+              </div>
+              <div class="sum-note" id="sum-update-status"></div>
+              <div class="sum-row sum-actions">
+                <button type="button" id="sum-diagnostics" class="sum-btn sum-ghost">Copy diagnostics</button>
+                <a class="sum-link" href="https://github.com/nykl3ar-max/spotifine" target="_blank" rel="noreferrer noopener">GitHub</a>
+              </div>
+            </div>
+          </details>
         </section>
       </div>
       <footer class="sum-footer"><span id="sum-track-label">Spotifine</span></footer>
@@ -375,7 +461,7 @@
       status: root.querySelector('#sum-lyrics-status'),
       lyrics: root.querySelector('#sum-lyrics'),
       artist: root.querySelector('#sum-artist'),
-      themes: root.querySelector('#sum-themes'),
+      theme: root.querySelector('#sum-theme'),
       surfaces: root.querySelector('#sum-surfaces'),
       resize: root.querySelector('#sum-resize'),
       width: root.querySelector('#sum-width'),
@@ -386,6 +472,17 @@
       glassBlur: root.querySelector('#sum-glass-blur'),
       glassBlurValue: root.querySelector('#sum-glass-blur-value'),
       layoutReset: root.querySelector('#sum-layout-reset'),
+      avoid: root.querySelector('#sum-avoid'),
+      compact: root.querySelector('#sum-compact'),
+      motion: root.querySelector('#sum-motion'),
+      gallery: root.querySelector('#sum-gallery'),
+      sizeUp: root.querySelector('#sum-size-up'),
+      sizeDown: root.querySelector('#sum-size-down'),
+      sizeValue: root.querySelector('#sum-size-value'),
+      updateInterval: root.querySelector('#sum-update-interval'),
+      updateNow: root.querySelector('#sum-update-now'),
+      updateStatus: root.querySelector('#sum-update-status'),
+      diagnostics: root.querySelector('#sum-diagnostics'),
       accent: root.querySelector('#sum-accent'),
       base: root.querySelector('#sum-base'),
       baseHex: root.querySelector('#sum-base-hex'),
@@ -413,25 +510,39 @@
     refs.css.value = readSetting(LS.css, '');
     refs.html.value = readSetting(LS.html, '');
     refs.accent.value = state.accent || themeById(state.theme).accent;
+    refs.avoid.checked = state.avoidSidebar;
+    refs.compact.checked = state.compact;
+    refs.motion.checked = state.reduceMotion;
+    refs.gallery.checked = state.gallery;
+    refs.sizeValue.textContent = state.size + 'px';
 
     for (const theme of THEMES) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'sum-theme';
-      button.dataset.sumTheme = theme.id;
-      button.innerHTML = `<span class="sum-theme-dot" style="background:linear-gradient(135deg, ${theme.vars['--background-base']} 50%, ${theme.accent} 50%)"></span><span>${theme.name}</span>`;
-      button.addEventListener('click', () => {
-        state.theme = theme.id;
-        state.accent = '';
-        state.effect = theme.effect || 'solid';
-        writeSetting(LS.theme, theme.id);
-        writeSetting(LS.accent, '');
-        writeSetting(LS.effect, state.effect);
-        refs.accent.value = theme.accent;
-        applyTheme();
-      });
-      refs.themes.appendChild(button);
+      const option = document.createElement('option');
+      option.value = theme.id;
+      option.textContent = theme.name;
+      refs.theme.appendChild(option);
     }
+    refs.theme.value = state.theme;
+    refs.theme.addEventListener('change', () => {
+      const selected = themeById(refs.theme.value);
+      state.theme = selected.id;
+      state.accent = '';
+      state.effect = selected.effect || 'solid';
+      writeSetting(LS.theme, state.theme);
+      writeSetting(LS.accent, '');
+      writeSetting(LS.effect, state.effect);
+      refs.accent.value = selected.accent;
+      applyTheme();
+    });
+
+    const intervals = [[15, 'Every 15 minutes'], [60, 'Every hour'], [360, 'Every 6 hours'], [1440, 'Once a day'], [0, 'Manually']];
+    for (const [minutes, label] of intervals) {
+      const option = document.createElement('option');
+      option.value = String(minutes);
+      option.textContent = label;
+      refs.updateInterval.appendChild(option);
+    }
+    refs.updateInterval.value = String(state.updateInterval);
 
     refs.close.addEventListener('click', () => setOpen(false));
     refs.tabs.forEach((tab) => tab.addEventListener('click', () => setTab(tab.dataset.sumTab)));
@@ -450,6 +561,8 @@
     });
     refs.fontUp.addEventListener('click', () => changeFont(1));
     refs.fontDown.addEventListener('click', () => changeFont(-1));
+    refs.sizeUp.addEventListener('click', () => changeFont(1));
+    refs.sizeDown.addEventListener('click', () => changeFont(-1));
     refs.scroll.addEventListener('change', () => {
       state.autoscroll = refs.scroll.checked;
       writeSetting(LS.scroll, state.autoscroll);
@@ -458,6 +571,31 @@
       state.romanize = refs.roman.checked;
       writeSetting(LS.romanize, state.romanize);
       renderLyrics();
+    });
+    refs.compact.addEventListener('change', () => {
+      state.compact = refs.compact.checked;
+      writeSetting(LS.compact, state.compact);
+      applyPreferences();
+    });
+    refs.motion.addEventListener('change', () => {
+      state.reduceMotion = refs.motion.checked;
+      writeSetting(LS.motion, state.reduceMotion);
+      applyPreferences();
+    });
+    refs.gallery.addEventListener('change', () => {
+      state.gallery = refs.gallery.checked;
+      writeSetting(LS.gallery, state.gallery);
+      if (state.artist) { renderArtist(); }
+    });
+    refs.avoid.addEventListener('change', () => {
+      state.avoidSidebar = refs.avoid.checked;
+      writeSetting(LS.avoid, state.avoidSidebar);
+      syncPanelOffset();
+    });
+    refs.updateInterval.addEventListener('change', () => {
+      state.updateInterval = clamp(Number(refs.updateInterval.value) || 0, 0, 1440);
+      writeSetting(LS.updateInterval, state.updateInterval);
+      scheduleUpdateChecks();
     });
     refs.accent.addEventListener('input', () => {
       state.accent = refs.accent.value;
@@ -575,13 +713,25 @@
     });
     if (refs.update) { refs.update.addEventListener('click', copyUpdate); }
     if (refs.updateCopy) { refs.updateCopy.addEventListener('click', copyUpdate); }
+    if (refs.updateNow) { refs.updateNow.addEventListener('click', () => checkForUpdate(true)); }
+    if (refs.diagnostics) { refs.diagnostics.addEventListener('click', copyDiagnostics); }
 
     renderUpdate();
-    setTimeout(checkForUpdate, 1200);
-    window.__SUM_UPDATE_TIMER__ = setInterval(checkForUpdate, 21600000);
+    scheduleUpdateChecks();
+    if (window.__SUM_UPDATE_BOOT__) { clearTimeout(window.__SUM_UPDATE_BOOT__); }
+    window.__SUM_UPDATE_BOOT__ = setTimeout(() => checkForUpdate(false), 1200);
+    if (window.__SUM_ONLINE_HANDLER__) { window.removeEventListener('online', window.__SUM_ONLINE_HANDLER__); }
+    window.__SUM_ONLINE_HANDLER__ = () => checkForUpdate(false);
+    window.addEventListener('online', window.__SUM_ONLINE_HANDLER__);
+    if (window.__SUM_VISIBLE_HANDLER__) { document.removeEventListener('visibilitychange', window.__SUM_VISIBLE_HANDLER__); }
+    window.__SUM_VISIBLE_HANDLER__ = () => {
+      if (document.visibilityState === 'visible' && Date.now() - state.updateCheckedAt > 300000) { checkForUpdate(false); }
+    };
+    document.addEventListener('visibilitychange', window.__SUM_VISIBLE_HANDLER__);
 
     applyTheme();
     applyLayout();
+    applyPreferences();
     syncPanelOffset();
     applyCustomCss(readSetting(LS.css, ''));
     applyCustomHtml(readSetting(LS.html, ''));
@@ -817,7 +967,7 @@
   function syncPanelOffset() {
     if (!refs.panel) { return; }
     let offset = 8;
-    if (state.side === 'right') {
+    if (state.avoidSidebar && state.side === 'right') {
       const sidebar = document.getElementById('Desktop_PanelContainer_Id');
       if (sidebar) {
         const rect = sidebar.getBoundingClientRect();
@@ -880,11 +1030,15 @@
         button.classList.toggle('is-active', button.dataset.sumEffect === effect);
       });
     }
-    if (refs.themes) {
-      refs.themes.querySelectorAll('.sum-theme').forEach((button) => {
-        button.classList.toggle('is-active', button.dataset.sumTheme === theme.id);
-      });
+    if (refs.theme) { refs.theme.value = theme.id; }
+  }
+
+  function applyPreferences() {
+    if (refs.panel) {
+      refs.panel.classList.toggle('is-compact', state.compact);
+      refs.panel.classList.toggle('is-reduced-motion', state.reduceMotion);
     }
+    if (refs.sizeValue) { refs.sizeValue.textContent = state.size + 'px'; }
   }
 
   function applyCustomCss(value) {
@@ -907,6 +1061,7 @@
     state.size = Math.min(28, Math.max(11, state.size + delta));
     writeSetting(LS.size, state.size);
     if (refs.lyrics) { refs.lyrics.style.setProperty('--sum-lyric-size', state.size + 'px'); }
+    if (refs.sizeValue) { refs.sizeValue.textContent = state.size + 'px'; }
   }
 
   function setOpen(open, immediate) {
@@ -1811,18 +1966,38 @@
     return 0;
   }
 
-  async function checkForUpdate() {
-    try {
-      const response = await fetch(LATEST_VERSION_URL + '?t=' + Date.now(), { cache: 'no-store' });
-      if (!response.ok) { return; }
-      const latest = (await response.text()).trim();
-      if (!/^\d+\.\d+\.\d+$/.test(latest)) { return; }
-      state.update = { latest, available: compareVersions(latest, VERSION) > 0 };
-      renderUpdate();
-    } catch (error) { }
+  function scheduleUpdateChecks() {
+    if (window.__SUM_UPDATE_TIMER__) {
+      clearInterval(window.__SUM_UPDATE_TIMER__);
+      window.__SUM_UPDATE_TIMER__ = null;
+    }
+    const minutes = clamp(Number(state.updateInterval) || 0, 0, 1440);
+    if (minutes > 0) {
+      window.__SUM_UPDATE_TIMER__ = setInterval(() => checkForUpdate(false), minutes * 60000);
+    }
   }
 
-  function renderUpdate() {
+  async function checkForUpdate(manual) {
+    if (state.updateBusy) { return; }
+    state.updateBusy = true;
+    state.updateError = '';
+    renderUpdate();
+    try {
+      const response = await fetch(LATEST_VERSION_URL + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!response.ok) { throw new Error('HTTP ' + response.status); }
+      const latest = (await response.text()).trim();
+      if (!/^\d+\.\d+\.\d+$/.test(latest)) { throw new Error('Invalid version file'); }
+      state.update = { latest, available: compareVersions(latest, VERSION) > 0 };
+      state.updateCheckedAt = Date.now();
+    } catch (error) {
+      state.updateError = String((error && error.message) || error).slice(0, 120);
+    } finally {
+      state.updateBusy = false;
+      renderUpdate(Boolean(manual));
+    }
+  }
+
+  function renderUpdate(manual) {
     const latest = state.update && state.update.available ? state.update.latest : '';
     if (refs.update) {
       refs.update.hidden = !latest;
@@ -1835,6 +2010,24 @@
         : 'Spotifine v' + VERSION + ' · up to date';
     }
     if (refs.updateCopy) { refs.updateCopy.hidden = !latest; }
+    if (refs.updateStatus) {
+      if (state.updateBusy) {
+        refs.updateStatus.textContent = 'Checking for updates…';
+      } else if (state.updateError) {
+        refs.updateStatus.textContent = 'Update check failed: ' + state.updateError;
+      } else if (state.updateCheckedAt) {
+        const time = new Date(state.updateCheckedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        refs.updateStatus.textContent = latest
+          ? 'Checked at ' + time + ' · v' + latest + ' is available'
+          : 'Checked at ' + time + ' · v' + VERSION + ' is current';
+      } else {
+        refs.updateStatus.textContent = manual ? 'No check has run yet.' : 'Checks GitHub automatically in the background.';
+      }
+    }
+    if (refs.updateNow && !state.updateBusy && manual) {
+      refs.updateNow.textContent = 'Checked';
+      setTimeout(() => { refs.updateNow.textContent = 'Check now'; }, 1600);
+    }
   }
 
   function copyText(value, done) {
@@ -1854,6 +2047,24 @@
       return;
     }
     fallback();
+  }
+
+  function copyDiagnostics() {
+    const data = {
+      version: VERSION,
+      theme: state.theme,
+      effect: state.effect,
+      side: state.side,
+      width: state.width,
+      update: state.update,
+      lastChecked: state.updateCheckedAt ? new Date(state.updateCheckedAt).toISOString() : null,
+      errors: (window.__SUM_ERRORS__ || []).slice(-5)
+    };
+    copyText(JSON.stringify(data, null, 2), () => {
+      if (!refs.diagnostics) { return; }
+      refs.diagnostics.textContent = 'Copied';
+      setTimeout(() => { refs.diagnostics.textContent = 'Copy diagnostics'; }, 1600);
+    });
   }
 
   function copyUpdate() {
@@ -1880,7 +2091,7 @@
     const hero = document.createElement('div');
     hero.className = 'sum-artist-hero';
     const images = artist.images && artist.images.length ? artist.images : (artist.image ? [artist.image] : []);
-    if (images.length) {
+    if (images.length && state.gallery) {
       const gallery = document.createElement('div');
       gallery.className = 'sum-gallery';
       const image = document.createElement('img');

@@ -717,10 +717,171 @@ html[data-sum-theme] [data-testid="play-button"] svg {
 }
 
 .sum-check {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--essential-bright-accent, #1ed760);
+  position: relative;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #4d4d4d;
+  appearance: none;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.sum-check::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.sum-check:checked {
+  background: var(--essential-bright-accent, #1ed760);
+}
+
+.sum-check:checked::after {
+  transform: translateX(14px);
+  background: #000000;
+}
+
+.sum-group {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sum-group:first-of-type {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sum-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  color: var(--text-base, #fff);
+  font-size: 13px;
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.sum-group-title::-webkit-details-marker {
+  display: none;
+}
+
+.sum-group-title::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-right: 3px;
+  border-right: 1.5px solid var(--text-subdued, #b3b3b3);
+  border-bottom: 1.5px solid var(--text-subdued, #b3b3b3);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.sum-group[open] > .sum-group-title::after {
+  transform: rotate(-135deg);
+}
+
+.sum-group-body {
+  padding: 0 0 12px;
+}
+
+.sum-group-body .sum-row {
+  min-height: 36px;
+}
+
+.sum-subhead {
+  margin: 14px 0 4px;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sum-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sum-step {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-base, #fff);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sum-step:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.sum-stepper .sum-hex {
+  min-width: 38px;
+  text-align: center;
+}
+
+#sum-theme {
+  width: 152px;
+}
+
+#sum-update-interval {
+  width: 156px;
+}
+
+.sum-row .sum-surfaces {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.sum-row .sum-surface {
+  flex: 0 0 auto;
+  min-width: 54px;
+}
+
+.sum-section[data-sum-section="style"] {
+  overflow-y: auto;
+  padding-bottom: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+#sum-panel.is-compact .sum-header {
+  min-height: 46px;
+}
+
+#sum-panel.is-compact .sum-body {
+  padding: 0 10px;
+}
+
+#sum-panel.is-compact .sum-row {
+  min-height: 32px;
+}
+
+#sum-panel.is-compact .sum-group-title {
+  min-height: 38px;
+}
+
+#sum-panel.is-compact .sum-lyrics {
+  padding-top: 0;
+}
+
+#sum-panel.is-reduced-motion *,
+#sum-panel.is-reduced-motion *::before,
+#sum-panel.is-reduced-motion *::after {
+  transition: none !important;
+  animation: none !important;
 }
 
 .sum-themes {

@@ -80,9 +80,9 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | --- | --- |
 | **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
 | **Artist** tab | Spotify-style header with gallery, name, artist badge and country/active/genres line; biography, every detail row shown (Unknown when missing) and verified links with logos. Identity is resolved through MusicBrainz first and cross-checked against Wikidata, so same-name politicians and other unrelated entries are rejected |
-| **Style** tab | Fourteen themes, Solid/Glass/OLED surface modes, live base/surface/text/accent colour pickers, panel width/side, glass opacity/blur, layout reset, theme reset, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
-| **Panel layout** | Width from 360–620 px (slider or drag the panel edge), docked left or right, plus adjustable glass opacity and blur with a one-click layout reset. On the right it automatically stops left of Spotify's Now Playing sidebar instead of covering it |
-| **Updates** | Checks GitHub for a newer release and shows an update badge; clicking it copies the install command |
+| **Style** tab | Grouped Appearance, Lyrics, Behavior, Advanced and About sections. Theme picker, accent and custom palette, Solid/Glass/OLED, panel width/side, right-sidebar avoidance, glass opacity/blur, text size, auto-scroll, pronunciation, compact panel, reduced motion, gallery toggle, update interval, manual update check, diagnostics, and custom CSS/HTML |
+| **Panel layout** | Width from 360–620 px (slider or drag the panel edge), docked left or right, plus adjustable glass opacity and blur with a one-click layout reset. On the right it automatically stops left of Spotify's Now Playing sidebar instead of covering it; the avoidance, compact panel, reduced motion and artist gallery toggles live in the Behavior group |
+| **Updates** | Checks GitHub on startup, every 15 minutes (configurable: 15 min, hourly, 6-hourly, daily, manual), when the network returns and when the panel becomes visible; shows an update badge and copies the install command |
 | **Ctrl+Shift+U** | Open or close the panel |
 | **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
 | **Spotify menus** | Adds an **Spotifine settings** entry to the profile menu and to three-dot menus, opening the Style tab |
@@ -175,7 +175,8 @@ Data sources:
 - **Artist sources.** Besides Wikipedia and Wikidata, profiles pull documented facts and links from MusicBrainz relations plus Discogs, AllMusic, Genius, SoundCloud, Bandcamp, Apple Music, Deezer, Tidal and Pandora identifiers where available.
 - **Nothing is uploaded** except the queries needed for lyrics, translation and artist data. No analytics, no telemetry.
 - **Resilience.** Requests time out after 12 seconds and retry once on network or server errors; stale artist responses are discarded, and lyric/artist caches are capped so long sessions stay stable.
-- **Updates.** The panel reads `version.txt` from the repository at startup and every six hours. When a newer version exists, a badge appears in the header and the Style tab offers a one-click copy of the install command; a failed check never interrupts playback.
+- **Updates.** The panel reads `version.txt` from the repository at startup, every 15 minutes by default, on reconnect and when the panel becomes visible again. The interval is configurable in Style → About and updates, along with a manual **Check now** button. When a newer version exists, a badge appears in the header and the update command can be copied with one click; a failed check never interrupts playback.
+- **Diagnostics.** Uncaught errors and rejected promises are kept in a small bounded list. Style → About and updates can copy a diagnostics report (version, theme, layout, update state and the last errors) for support.
 
 ---
 
