@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.2.4';
+  const VERSION = '3.2.5';
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -218,7 +218,6 @@
     if (old) { old.remove(); }
     document.querySelectorAll('[data-sum-toggle="true"]').forEach((node) => node.remove());
     if (window.__SUM_TIMER__) { clearInterval(window.__SUM_TIMER__); }
-    if (window.__SUM_KEY_HANDLER__) { document.removeEventListener('keydown', window.__SUM_KEY_HANDLER__); }
     resetInjectedSheets();
     installSheet('base', CSS);
 
@@ -1020,6 +1019,7 @@
     }
   }
 
+  if (window.__SUM_KEY_HANDLER__) { document.removeEventListener('keydown', window.__SUM_KEY_HANDLER__); }
   window.__SUM_KEY_HANDLER__ = (event) => {
     if (event.ctrlKey && event.shiftKey && (event.key === 'U' || event.key === 'u')) {
       event.preventDefault();
