@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.14.1';
+  const VERSION = '3.14.2';
   const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
   const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
   const FACT_ORDER = ['Birth name', 'Born', 'Died', 'Birthplace', 'Origin', 'Country', 'Type', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];

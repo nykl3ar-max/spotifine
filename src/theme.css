@@ -95,11 +95,10 @@ html[data-sum-theme] progress {
   accent-color: var(--sum-accent, #1ed760);
 }
 
-/* Layout wrappers that Spotify paints black behind the player and right sidebar */
+/* Layout wrapper that Spotify paints black behind the player and sidebars.
+   Keep this narrow: painting every root child can cover dynamic overlays. */
 html[data-sum-theme] #main,
-html[data-sum-theme] [data-testid="root"],
-html[data-sum-theme] [data-testid="root"] > div,
-html[data-sum-theme] [data-testid="root"] > div > div {
+html[data-sum-theme] [data-testid="root"] > div:has([data-testid="now-playing-bar"]) {
   background-color: var(--sum-bg-base, #121212) !important;
 }
 
