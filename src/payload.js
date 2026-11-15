@@ -1,7 +1,10 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.9.1';
+  const VERSION = '3.9.2';
+  const UPDATE_COMMAND = 'irm https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/install.ps1 | iex';
+  const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/nykl3ar-max/spotifine/main/version.txt';
+  const FACT_ORDER = ['Birth name', 'Born', 'Birthplace', 'Origin', 'Country', 'Active', 'Genres', 'Profession', 'Instruments', 'Members', 'Label'];
   const CSS = window.__SUM_CSS__ || '';
 
   if (window.__SUM_VERSION__ === VERSION && window.__SUM_APPLIED_CSS__ === CSS && document.getElementById('sum-root')) {
@@ -219,6 +222,7 @@
           <button type="button" class="sum-tab" data-sum-tab="artist">Artist</button>
           <button type="button" class="sum-tab" data-sum-tab="style">Style</button>
         </div>
+        <button type="button" id="sum-update" class="sum-update" hidden>Update</button>
         <button type="button" id="sum-close" class="sum-icon" aria-label="Close panel">&#10005;</button>
       </header>
       <div class="sum-body">
@@ -290,6 +294,12 @@
             <button type="button" id="sum-html-reset" class="sum-btn sum-ghost">Reset</button>
           </div>
           <div class="sum-note">HTML is rendered in #sum-custom-html; scripts, iframes and inline handlers are removed.</div>
+          <div class="sum-label">About</div>
+          <div class="sum-note" id="sum-version">Spotifine</div>
+          <div class="sum-row sum-actions">
+            <button type="button" id="sum-update-copy" class="sum-btn" hidden>Copy update command</button>
+            <a class="sum-link" href="https://github.com/nykl3ar-max/spotifine" target="_blank" rel="noreferrer noopener">GitHub</a>
+          </div>
           <div class="sum-note">Translation and pronunciation modelled on <a class="sum-link" href="https://github.com/TheoreticallyBryChen/Lingo-lyrics" target="_blank" rel="noreferrer noopener">Lingo-lyrics</a> (independent implementation).</div>
         </section>
       </div>
@@ -303,6 +313,7 @@
     if (old) { old.remove(); }
     document.querySelectorAll('[data-sum-toggle="true"]').forEach((node) => node.remove());
     if (window.__SUM_TIMER__) { clearInterval(window.__SUM_TIMER__); }
+    if (window.__SUM_UPDATE_TIMER__) { clearInterval(window.__SUM_UPDATE_TIMER__); }
     if (window.__SUM_MENU_OBSERVER__) { window.__SUM_MENU_OBSERVER__.disconnect(); window.__SUM_MENU_OBSERVER__ = null; }
     resetInjectedSheets();
     installSheet('base', CSS);
@@ -317,6 +328,9 @@
       root,
       panel: root.querySelector('#sum-panel'),
       close: root.querySelector('#sum-close'),
+      update: root.querySelector('#sum-update'),
+      versionNote: root.querySelector('#sum-version'),
+      updateCopy: root.querySelector('#sum-update-copy'),
       tabs: [...root.querySelectorAll('.sum-tab')],
       sections: [...root.querySelectorAll('[data-sum-section]')],
       lang: root.querySelector('#sum-lang'),
@@ -471,6 +485,12 @@
       writeSetting(LS.html, '');
       applyCustomHtml('');
     });
+    if (refs.update) { refs.update.addEventListener('click', copyUpdate); }
+    if (refs.updateCopy) { refs.updateCopy.addEventListener('click', copyUpdate); }
+
+    renderUpdate();
+    setTimeout(checkForUpdate, 1200);
+    window.__SUM_UPDATE_TIMER__ = setInterval(checkForUpdate, 21600000);
 
     applyTheme();
     applyCustomCss(readSetting(LS.css, ''));
@@ -1449,6 +1469,74 @@
     }
   }
 
+  function compareVersions(left, right) {
+    const a = String(left).split('.').map((part) => parseInt(part, 10) || 0);
+    const b = String(right).split('.').map((part) => parseInt(part, 10) || 0);
+    for (let index = 0; index < 3; index++) {
+      const difference = (a[index] || 0) - (b[index] || 0);
+      if (difference !== 0) { return difference > 0 ? 1 : -1; }
+    }
+    return 0;
+  }
+
+  async function checkForUpdate() {
+    try {
+      const response = await fetch(LATEST_VERSION_URL + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!response.ok) { return; }
+      const latest = (await response.text()).trim();
+      if (!/^\d+\.\d+\.\d+$/.test(latest)) { return; }
+      state.update = { latest, available: compareVersions(latest, VERSION) > 0 };
+      renderUpdate();
+    } catch (error) { }
+  }
+
+  function renderUpdate() {
+    const latest = state.update && state.update.available ? state.update.latest : '';
+    if (refs.update) {
+      refs.update.hidden = !latest;
+      refs.update.textContent = latest ? 'v' + latest : 'Update';
+      refs.update.title = latest ? 'Version ' + latest + ' is available — click to copy the update command' : '';
+    }
+    if (refs.versionNote) {
+      refs.versionNote.textContent = latest
+        ? 'Spotifine v' + VERSION + ' · update v' + latest + ' available'
+        : 'Spotifine v' + VERSION + ' · up to date';
+    }
+    if (refs.updateCopy) { refs.updateCopy.hidden = !latest; }
+  }
+
+  function copyText(value, done) {
+    const fallback = () => {
+      const area = document.createElement('textarea');
+      area.value = value;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      try { document.execCommand('copy'); } catch (error) { }
+      area.remove();
+      done();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(done, fallback);
+      return;
+    }
+    fallback();
+  }
+
+  function copyUpdate() {
+    copyText(UPDATE_COMMAND, () => {
+      if (refs.update && state.update) {
+        refs.update.textContent = 'Copied';
+        setTimeout(() => { refs.update.textContent = 'v' + state.update.latest; }, 1600);
+      }
+      if (refs.updateCopy) {
+        refs.updateCopy.textContent = 'Copied';
+        setTimeout(() => { refs.updateCopy.textContent = 'Copy update command'; }, 1600);
+      }
+    });
+  }
+
   function renderArtist() {
     if (!refs.artist) { return; }
     const artist = state.artist;
@@ -1522,10 +1610,37 @@
       show(0);
       hero.appendChild(gallery);
     }
-    const heading = document.createElement('div');
+    const factMap = new Map((artist.facts || []).map(([label, value]) => [label, value]));
+
+    const head = document.createElement('div');
+    head.className = 'sum-artist-head';
+    const heading = document.createElement('h2');
     heading.className = 'sum-artist-name';
     heading.textContent = artist.name;
-    hero.appendChild(heading);
+    head.appendChild(heading);
+    if (artist.spotifyUrl) {
+      const open = document.createElement('a');
+      open.className = 'sum-artist-open';
+      open.href = artist.spotifyUrl;
+      open.target = '_blank';
+      open.rel = 'noreferrer noopener';
+      open.textContent = 'Spotify';
+      head.appendChild(open);
+    }
+    hero.appendChild(head);
+
+    const meta = document.createElement('div');
+    meta.className = 'sum-artist-meta';
+    const badge = document.createElement('span');
+    badge.className = 'sum-artist-badge';
+    badge.textContent = 'Artist';
+    meta.appendChild(badge);
+    const metaBits = [factMap.get('Country'), factMap.get('Active'), factMap.get('Genres')].filter(Boolean);
+    const metaText = document.createElement('span');
+    metaText.className = 'sum-artist-meta-text';
+    metaText.textContent = metaBits.length ? metaBits.join(' · ') : 'Unknown';
+    meta.appendChild(metaText);
+    hero.appendChild(meta);
     refs.artist.appendChild(hero);
 
     if (artist.summary) {
@@ -1540,25 +1655,24 @@
       refs.artist.appendChild(paragraph);
     }
 
-    if (artist.facts && artist.facts.length) {
-      const list = document.createElement('div');
-      list.className = 'sum-facts';
-      for (const [label, value] of artist.facts) {
-        if (!value) { continue; }
-        const row = document.createElement('div');
-        row.className = 'sum-fact';
-        const key = document.createElement('span');
-        key.className = 'sum-fact-key';
-        key.textContent = label;
-        const val = document.createElement('span');
-        val.className = 'sum-fact-value';
-        val.textContent = value;
-        row.appendChild(key);
-        row.appendChild(val);
-        list.appendChild(row);
-      }
-      refs.artist.appendChild(list);
+    const list = document.createElement('div');
+    list.className = 'sum-facts';
+    for (const label of FACT_ORDER) {
+      const value = factMap.get(label) || 'Unknown';
+      const row = document.createElement('div');
+      row.className = 'sum-fact';
+      const key = document.createElement('span');
+      key.className = 'sum-fact-key';
+      key.textContent = label;
+      const val = document.createElement('span');
+      val.className = 'sum-fact-value';
+      if (value === 'Unknown') { val.classList.add('is-unknown'); }
+      val.textContent = value;
+      row.appendChild(key);
+      row.appendChild(val);
+      list.appendChild(row);
     }
+    refs.artist.appendChild(list);
 
     if (artist.links && artist.links.length) {
       const links = document.createElement('div');
@@ -1584,7 +1698,7 @@
 
     const note = document.createElement('div');
     note.className = 'sum-note';
-    note.textContent = 'Sources: Wikipedia, Wikidata and Spotify. Only documented facts are shown.';
+    note.textContent = 'Sources: Wikipedia, Wikidata and Spotify. Missing details are shown as Unknown.';
     refs.artist.appendChild(note);
   }
 
@@ -1630,6 +1744,7 @@
     render: renderLyrics,
     linkIcon: iconForLink,
     lookupArtist: (name) => findMusicEntity(name).then((match) => match ? { qid: match.qid, title: match.title, description: entityDescription(match.entity) } : null),
+    checkUpdate: checkForUpdate,
     previewArtist: (name, url) => loadArtistFor(name, url || ''),
     refreshArtist: loadArtistForCurrent,
     refresh: window.__SUM_REFRESH__

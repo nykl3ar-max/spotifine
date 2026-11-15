@@ -415,12 +415,65 @@ html[data-sum-theme] [data-testid="search-input"] {
   border-radius: 8px;
 }
 
+.sum-artist-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .sum-artist-name {
+  flex: 1 1 auto;
+  min-width: 0;
   color: var(--text-base, #fff);
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.sum-artist-open {
+  flex: 0 0 auto;
+  padding: 5px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  color: var(--text-base, #fff);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 0.1s ease, background-color 0.1s ease;
+}
+
+.sum-artist-open:hover {
+  border-color: var(--text-base, #fff);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sum-artist-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: -4px;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.sum-artist-badge {
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-base, #fff);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sum-artist-meta-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .sum-summary {
@@ -456,6 +509,33 @@ html[data-sum-theme] [data-testid="search-input"] {
   flex: 1;
   color: var(--text-base, #fff);
   font-weight: 500;
+}
+
+.sum-fact-value.is-unknown {
+  color: var(--text-subdued, #b3b3b3);
+  font-weight: 400;
+}
+
+.sum-update {
+  height: 24px;
+  margin-left: auto;
+  padding: 0 9px;
+  border: 1px solid var(--essential-bright-accent, #1ed760);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--essential-bright-accent, #1ed760);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sum-update:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+#sum-update:not([hidden]) + .sum-icon {
+  margin-left: 4px;
 }
 
 .sum-links {

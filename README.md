@@ -79,8 +79,9 @@ Translation follows the Lingo-lyrics approach: every line is translated in place
 | Control | What it does |
 | --- | --- |
 | **Lyrics** tab | Synced lyrics for the current track, with language and display-mode selectors (`Both languages`, `Translated only`, `Original only`), font size buttons and a pronunciation toggle in Style |
-| **Artist** tab | Photo gallery, biography, documented facts (birth details, origin, active years, genres, profession, instruments, members and label) and verified links with logos, including Spotify and Wikidata |
+| **Artist** tab | Spotify-style header with gallery, name, artist badge and country/active/genres line; biography, every detail row shown (Unknown when missing) and verified links with logos, including Spotify and Wikidata |
 | **Style** tab | Fourteen themes, Solid/Glass/OLED surface modes, live base/surface/text/accent colour pickers, theme reset, auto-scroll and pronunciation toggles, plus custom CSS and HTML boxes with Apply/Reset |
+| **Updates** | Checks GitHub for a newer release and shows an update badge; clicking it copies the install command |
 | **Ctrl+Shift+U** | Open or close the panel |
 | **Player bar button** | Sits beside Spotify's own lyrics button and does the same as the shortcut |
 | **Spotify menus** | Adds an **Spotifine settings** entry to the profile menu and to three-dot menus, opening the Style tab |
@@ -171,6 +172,7 @@ Data sources:
 - **No DRM changes, no audio capture, no account changes.**
 - **Nothing is uploaded** except the queries needed for lyrics, translation and artist data. No analytics, no telemetry.
 - **Resilience.** Requests time out after 12 seconds and retry once on network or server errors; stale artist responses are discarded, and lyric/artist caches are capped so long sessions stay stable.
+- **Updates.** The panel reads `version.txt` from the repository at startup and every six hours. When a newer version exists, a badge appears in the header and the Style tab offers a one-click copy of the install command; a failed check never interrupts playback.
 
 ---
 
